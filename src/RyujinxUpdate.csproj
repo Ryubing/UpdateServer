@@ -5,6 +5,11 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
+    
+    <PropertyGroup>
+        <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+        <PublishSingleFile>true</PublishSingleFile>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Gommon" Version="2.7.1.2" />

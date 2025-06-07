@@ -1,16 +1,25 @@
 ﻿using System.Configuration;
-using Gommon;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using NGitLab;
 
 namespace RyujinxUpdate.Services.GitLab;
 
 public class GitLabService
 {
+    private static readonly GitLabReleaseJsonResponseSerializerContext ReleaseSerializerContext =
+        new();
+    
+    private readonly HttpClient _http;
     public GitLabClient Client { get; }
-    private readonly PeriodicTimer _refreshTimer;
+
+    private readonly ILogger<GitLabService> _logger;
 
     public GitLabService(IConfiguration config, ILogger<GitLabService> logger)
     {
+        _logger = logger;
+        
         var gitlabSection = config.GetSection("GitLab");
         
         if (!gitlabSection.Exists())
@@ -21,24 +30,40 @@ public class GitLabService
             config["GitLab:AccessToken"]
         );
 
-        if (config["GitLab:RefreshIntervalMinutes"] is not { } refreshIntervalStr)
+        _http = new HttpClient
         {
-            _refreshTimer = new(TimeSpan.FromMinutes(5));
-            return;
-        }
-        
-        if (int.TryParse(refreshIntervalStr, out var minutes))
-            _refreshTimer = new PeriodicTimer(TimeSpan.FromMinutes(minutes));
-        else
-        {
-            logger.LogWarning(
-                "Config value 'GitLab:RefreshIntervalSeconds' was not a valid integer. Defaulting to 5 minutes.");
-            _refreshTimer = new(TimeSpan.FromMinutes(5));
-        }
+            BaseAddress = new Uri(gitlabSection.GetValue<string>("Endpoint")!.TrimEnd('/')),
+            DefaultRequestHeaders =
+            {
+                Authorization =
+                    AuthenticationHeaderValue.Parse($"Bearer {gitlabSection.GetValue<string>("AccessToken")}")
+            }
+        };
     }
 
-    public void Init() => Executor.ExecuteBackgroundAsync(async () =>
+    private async ValueTask<T?> HandleNotFoundAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> typeInfo)
     {
+        var contentString = await response.Content.ReadAsStringAsync();
+
+        if (contentString is """{"message":"404 Not Found"}""")
+            return default;
         
-    });
+        _logger.LogInformation(contentString);
+
+        return JsonSerializer.Deserialize(contentString, typeInfo);
+    }
+    
+    public Task<GitLabReleaseJsonResponse?> GetLatestReleaseAsync(long projectId) 
+        => GetReleaseAsync(projectId, "permalink/latest");
+
+    public async Task<GitLabReleaseJsonResponse?> GetReleaseAsync(long projectId, string tagName) =>
+        await HandleNotFoundAsync(
+            await _http.GetAsync($"api/v4/projects/{projectId}/releases/{tagName}"),
+            ReleaseSerializerContext.GitLabReleaseJsonResponse
+        );
+    
+    public async Task<GitLabReleaseJsonResponse[]> GetReleasesAsync(long projectId) =>
+        (await _http.GetFromJsonAsync(
+            $"api/v4/projects/{projectId}/releases", 
+            ReleaseSerializerContext.GitLabReleaseJsonResponseArray))!;
 }
