@@ -1,5 +1,7 @@
-﻿using Gommon;
+﻿using System.Text.Json.Serialization;
+using Gommon;
 using NGitLab.Models;
+using RyujinxUpdate.Model;
 
 namespace RyujinxUpdate.Services.GitLab;
 
@@ -89,12 +91,22 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
                 Tag = release.TagName,
                 Downloads =
                 {
-                    WindowsX64 = windowsX64.Url,
-                    LinuxX64 = linuxX64.Url,
-                    LinuxAppImageX64 = linuxX64AppImage.Url,
-                    MacOsUniversal = macOs.Url,
-                    LinuxArm64 = linuxArm64.Url,
-                    LinuxAppImageArm64 = linuxArm64AppImage.Url
+                    Windows =
+                    {
+                        X64 = windowsX64.Url,
+                        Arm64 = string.Empty,
+                    },
+                    Linux =
+                    {
+                        X64 = linuxX64.Url,
+                        Arm64 = linuxArm64.Url
+                    },
+                    LinuxAppImage =
+                    {
+                        X64 = linuxX64AppImage.Url,
+                        Arm64 = linuxArm64AppImage.Url
+                    },
+                    MacOS = macOs.Url
                 }
             });
         }
@@ -108,18 +120,10 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
 
     public class Entry
     {
+        [JsonPropertyName("tag")]
         public string Tag { get; set; }
+        
+        [JsonPropertyName("downloads")] 
         public DownloadLinks Downloads { get; } = new();
-
-        public class DownloadLinks
-        {
-            public string WindowsX64 { get; set; }
-            //public string WindowsArm64 { get; set; }
-            public string LinuxX64 { get; set; }
-            public string LinuxArm64 { get; set; }
-            public string LinuxAppImageX64 { get; set; }
-            public string LinuxAppImageArm64 { get; set; }
-            public string MacOsUniversal { get; set; }
-        }
     }
 }

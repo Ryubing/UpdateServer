@@ -47,8 +47,6 @@ public class GitLabService
 
         if (contentString is """{"message":"404 Not Found"}""")
             return default;
-        
-        _logger.LogInformation(contentString);
 
         return JsonSerializer.Deserialize(contentString, typeInfo);
     }
