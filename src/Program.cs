@@ -1,41 +1,44 @@
+using Gommon;
+using NSwag;
+using RyujinxUpdate.Services.GitLab;
+
+const string ApiVersion = "v1";
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+var disableSwagger = args.ContainsIgnoreCase("--disable-swagger") || args.ContainsIgnoreCase("-ds");
+
+builder.Services.AddSingleton<GitLabService>();
+
+if (!disableSwagger)
+{
+    builder.Services.AddOpenApi(ApiVersion);
+    builder.Services.AddOpenApiDocument(opt =>
+    {
+        opt.PostProcess = doc =>
+        {
+            doc.Info = new OpenApiInfo
+            {
+                Version = ApiVersion,
+                Title = "Ryujinx Updates",
+                Description = "REST API for Ryubing updates powered by ASP.NET Core."
+            };
+        };
+    });
+}
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.Services.GetRequiredService<GitLabService>().Client.Version.Get();
+
+if (!disableSwagger)
 {
     app.MapOpenApi();
+    app.UseSwaggerUi(opt => opt.DocumentPath = $"/openapi/{ApiVersion}.json");
 }
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
