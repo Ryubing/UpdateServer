@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using RyujinxUpdate.Services.GitLab;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace RyujinxUpdate.Model;
@@ -18,6 +18,7 @@ public class DownloadLinks
     [JsonPropertyName("windows")] public ArchitectureTuple Windows { get; } = new();
     [JsonPropertyName("linux")] public ArchitectureTuple Linux { get; } = new();
     [JsonPropertyName("linux_appimage")] public ArchitectureTuple LinuxAppImage { get; } = new();
+    // ReSharper disable once InconsistentNaming
     [JsonPropertyName("macOS")] public string MacOS { get; set; }
 
     public class ArchitectureTuple
