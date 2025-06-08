@@ -17,6 +17,8 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
 
     private readonly string _gitlabEndpoint;
 
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+
     public VersionCache(IConfiguration config, GitLabService gitlabService, ILogger<VersionCache> logger)
     {
         _gl = gitlabService;
@@ -58,10 +60,14 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
         }
     });
 
+    public Task<Extensions.ScopedSemaphoreLock> TakeLockAsync() => _semaphore.TakeAsync();
+
     public Entry? Latest => this[_latestTag ?? string.Empty];
 
     public async Task Update()
     {
+        using var _ = await TakeLockAsync();
+        
         _logger.LogInformation("Reloading version cache for {project}", _cachedProject.Value.Name);
         
         _latestTag = (await _gl.GetLatestReleaseAsync(_cachedProject.Value.Id))?.TagName;

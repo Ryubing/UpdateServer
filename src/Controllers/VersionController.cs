@@ -12,13 +12,17 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public ActionResult<object> GetLatestStable(
+    public async Task<ActionResult<object>> GetLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache,
         [FromQuery] string? os = null,
         [FromQuery] string? arch = null
         )
     {
+        var lck = await vcache.TakeLockAsync();
+        
         var latest = vcache.Latest;
+        
+        lck.Dispose();
         
         if (latest is null)
             return NotFound();
@@ -67,13 +71,17 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public ActionResult<object> GetLatestCanary(
+    public async Task<ActionResult<object>> GetLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache,
         [FromQuery] string? os = null,
         [FromQuery] string? arch = null
     )
     {
+        var lck = await vcache.TakeLockAsync();
+        
         var latest = vcache.Latest;
+        
+        lck.Dispose();
 
         if (latest is null)
             return NotFound();
@@ -122,14 +130,17 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public ActionResult<VersionCache.Entry> GetSpecificStable(
+    public async Task<ActionResult<VersionCache.Entry>> GetSpecificStable(
         [FromKeyedServices("stableCache")] VersionCache vcache,
         string version
     )
     {
-        if (vcache[version] is { } cacheEntry)
-            return Ok(cacheEntry);
-
+        using (var _ = await vcache.TakeLockAsync())
+        {
+            if (vcache[version] is { } cacheEntry)
+                return Ok(cacheEntry);
+        }
+        
         return NotFound();
     }
     
@@ -137,14 +148,17 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public ActionResult<VersionCache.Entry> GetSpecificCanary(
+    public async Task<ActionResult<VersionCache.Entry>> GetSpecificCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache,
         string version
     )
     {
-        if (vcache[version] is { } cacheEntry)
-            return Ok(cacheEntry);
-
+        using (var _ = await vcache.TakeLockAsync())
+        {
+            if (vcache[version] is { } cacheEntry)
+                return Ok(cacheEntry);
+        }
+        
         return NotFound();
     }
 }

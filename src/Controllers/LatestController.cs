@@ -12,7 +12,7 @@ public class LatestController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<object> GetLatestCustom(
+    public async Task<ActionResult<object>> GetLatestCustom(
         [FromQuery] string? os,
         [FromQuery] string? arch,
         [FromQuery] string? rc = "stable"
@@ -25,7 +25,11 @@ public class LatestController : ControllerBase
             ? "stableCache"
             : "canaryCache");
 
+        var lck = await versionCache.TakeLockAsync();
+        
         var latest = versionCache.Latest;
+        
+        lck.Dispose();
 
         if (latest is null)
             return NotFound();

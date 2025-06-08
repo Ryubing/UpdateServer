@@ -13,7 +13,7 @@ public class DownloadController : ControllerBase
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<object> DownloadLatestCustom(
+    public async Task<ActionResult<object>> DownloadLatestCustom(
         [FromQuery] string os,
         [FromQuery] string arch,
         [FromQuery] string rc = "stable",
@@ -26,8 +26,12 @@ public class DownloadController : ControllerBase
         var versionCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>(rc is "stable"
             ? "stableCache"
             : "canaryCache");
+        
+        var lck = await versionCache.TakeLockAsync();
 
         var release = version is "latest" ? versionCache.Latest : versionCache[version];
+        
+        lck.Dispose();
         
         if (release is null)
             return NotFound();
@@ -63,11 +67,15 @@ public class DownloadController : ControllerBase
     [HttpGet("stable")]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<object> DownloadLatestStable(
+    public async Task<ActionResult<object>> DownloadLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache
     )
     {
+        var lck = await vcache.TakeLockAsync();
+        
         var latest = vcache.Latest;
+        
+        lck.Dispose();
 
         if (latest is null)
             return NotFound();
@@ -90,11 +98,15 @@ public class DownloadController : ControllerBase
     [HttpGet("canary")]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<object> DownloadLatestCanary(
+    public async Task<ActionResult<object>> DownloadLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache
     )
     {
+        var lck = await vcache.TakeLockAsync();
+        
         var latest = vcache.Latest;
+        
+        lck.Dispose();
 
         if (latest is null)
             return NotFound();
