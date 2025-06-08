@@ -28,13 +28,13 @@ foreach (var (index, arg) in args.Index())
     }
 }
 
-var disableSwagger = args.ContainsIgnoreCase("--disable-swagger") || args.ContainsIgnoreCase("-ds");
+var enableSwagger = args.ContainsIgnoreCase("--enable-swagger") || args.ContainsIgnoreCase("-s");
 
 builder.Services.AddSingleton<GitLabService>();
 builder.Services.AddKeyedSingleton<VersionCache>("stableCache");
 builder.Services.AddKeyedSingleton<VersionCache>("canaryCache");
 
-if (!disableSwagger)
+if (enableSwagger)
 {
     builder.Services.AddOpenApi(apiVersion);
     builder.Services.AddOpenApiDocument(opt =>
@@ -55,10 +55,14 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-if (!disableSwagger)
+if (enableSwagger)
 {
     app.MapOpenApi();
-    app.UseSwaggerUi(opt => opt.DocumentPath = $"/openapi/{apiVersion}.json");
+    app.UseSwaggerUi(opt =>
+    {
+        opt.ServerUrl = app.Configuration["ServerUrl"];
+        opt.DocumentPath = $"/openapi/{apiVersion}.json";
+    });
 }
 
 var versionCacheSection = app.Configuration.GetSection("GitLab").GetRequiredSection("VersionCacheSources");
@@ -76,6 +80,7 @@ if (canarySource != null)
     app.Services.GetRequiredKeyedService<VersionCache>("canaryCache").Init(new ProjectId(canarySource));
 
 app.MapControllers();
+app.UseHttpsRedirection();
 
 TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
 #pragma warning disable CA2254
