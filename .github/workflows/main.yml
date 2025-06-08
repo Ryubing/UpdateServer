@@ -44,11 +44,11 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          name: "Volte V${{ steps.version_info.outputs.build_version }}"
+          name: "Ryubing UpdateServer V${{ steps.version_info.outputs.build_version }}"
           tag: ${{ steps.version_info.outputs.build_version }}
           artifacts: "artifacts/*.tar.gz,artifacts/*.7z"
           body: "**[Changes since last build](https://github.com/Ryubing/UpdateServer/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }})**"
           omitBodyDuringUpdate: true
           owner: Ryubing
-          repo: Update
+          repo: UpdateServer
           token: ${{ secrets.RELEASE_TOKEN }}
