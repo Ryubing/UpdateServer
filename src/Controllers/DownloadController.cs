@@ -43,23 +43,20 @@ public class DownloadController : ControllerBase
             _ => null
         };
 
-        if (platform is null && os is not null)
+        if (platform is null)
             return BadRequest($"Unknown platform '{os}'");
 
         var url = arch.ToLower() switch
         {
-            "arm64" or "a64" or "arm" => platform!.Arm64,
-            "x64" or "x86-64" or "x86_64" or "amd64" => platform!.X64,
+            "arm64" or "a64" or "arm" => platform.Arm64,
+            "x64" or "x86-64" or "x86_64" or "amd64" => platform.X64,
             _ => null
         };
         
-        if (url is null && arch is not null)
+        if (url is null)
             return BadRequest($"Unknown architecture '{arch}'");
-
-        if (url is not null)
-            return Redirect(url);
-
-        return NotFound();
+        
+        return Redirect(url);
     }
     
     [HttpGet]
