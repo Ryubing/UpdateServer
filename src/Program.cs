@@ -80,7 +80,6 @@ if (canarySource != null)
     app.Services.GetRequiredKeyedService<VersionCache>("canaryCache").Init(new ProjectId(canarySource));
 
 app.MapControllers();
-app.UseHttpsRedirection();
 
 TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
 #pragma warning disable CA2254
