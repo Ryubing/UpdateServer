@@ -4,7 +4,7 @@ using NGitLab.Models;
 using NSwag;
 using RyujinxUpdate.Services.GitLab;
 
-const string ApiVersion = "v1";
+const string apiVersion = "v1";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,14 +36,14 @@ builder.Services.AddKeyedSingleton<VersionCache>("canaryCache");
 
 if (!disableSwagger)
 {
-    builder.Services.AddOpenApi(ApiVersion);
+    builder.Services.AddOpenApi(apiVersion);
     builder.Services.AddOpenApiDocument(opt =>
     {
         opt.PostProcess = doc =>
         {
             doc.Info = new OpenApiInfo
             {
-                Version = ApiVersion,
+                Version = apiVersion,
                 Title = "Ryujinx Updates",
                 Description = "REST API for Ryubing updates powered by ASP.NET Core."
             };
@@ -58,7 +58,7 @@ var app = builder.Build();
 if (!disableSwagger)
 {
     app.MapOpenApi();
-    app.UseSwaggerUi(opt => opt.DocumentPath = $"/openapi/{ApiVersion}.json");
+    app.UseSwaggerUi(opt => opt.DocumentPath = $"/openapi/{apiVersion}.json");
 }
 
 var versionCacheSection = app.Configuration.GetSection("GitLab").GetRequiredSection("VersionCacheSources");
