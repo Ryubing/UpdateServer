@@ -37,7 +37,7 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
         }
     }
 
-    public void Init(ProjectId projectId) => Executor.Execute(async () =>
+    public void Init(ProjectId projectId) => Executor.ExecuteBackgroundAsync(async () =>
     {
         await Update(projectId);
         while (await _refreshTimer.WaitForNextTickAsync())
@@ -94,7 +94,7 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
                     Windows =
                     {
                         X64 = windowsX64.Url,
-                        Arm64 = string.Empty,
+                        Arm64 = string.Empty
                     },
                     Linux =
                     {

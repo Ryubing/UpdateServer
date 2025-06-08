@@ -58,6 +58,8 @@ if (canarySource != null)
 app.MapControllers();
 
 TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
-    app.Logger.LogError(new EventId(-1, "TaskException"), eventArgs.Exception.Message, eventArgs.Exception);
+#pragma warning disable CA2254
+    app.Logger.LogError(eventArgs.Exception.InnerException ?? eventArgs.Exception, null);
+#pragma warning restore CA2254
 
 app.Run();

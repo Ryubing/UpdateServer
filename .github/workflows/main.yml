@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  workflow_dispatch:
+    inputs: {}
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+      - 'assets/**'
+      - '.vscode/**'
+      - '*.yml'
+      - '*.json'
+      - '*.md'
+      - '.gitignore'
+      - '.gitattributes'
+
+
+env:
+  BASE_VERSION: "1.0"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Get version info
+        id: version_info
+        run: |
+          echo "build_version=${{ env.BASE_VERSION }}.${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "prev_build_version=${{ env.BASE_VERSION }}.$((${{ github.run_number }} - 1))" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - uses: actions/checkout@v4
+        name: "Checkout code"
+      - uses: actions/setup-dotnet@v4
+        name: "Install .NET SDK"
+        with:
+          global-json-file: global.json
+
+      - name: Compile
+        run: bash build.sh ${{ steps.version_info.outputs.build_version }} false
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          name: "Volte V${{ steps.version_info.outputs.build_version }}"
+          tag: ${{ steps.version_info.outputs.build_version }}
+          artifacts: "artifacts/*.tar.gz,artifacts/*.7z"
+          body: "**[Changes since last build](https://github.com/Polyhaze/Volte/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }})**"
+          omitBodyDuringUpdate: true
+          owner: Ryubing
+          repo: Update
+          token: ${{ secrets.RELEASE_TOKEN }}

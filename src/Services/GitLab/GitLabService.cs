@@ -24,20 +24,15 @@ public class GitLabService
         
         if (!gitlabSection.Exists())
             throw new ConfigurationErrorsException($"The '{gitlabSection.Key}' section does not exist in your appsettings.json. You need to provide an 'Endpoint', 'AccessToken', and optionally 'RefreshIntervalMinutes' values.");
-        
-        Client = new GitLabClient(
-            config["GitLab:Endpoint"],
-            config["GitLab:AccessToken"]
-        );
 
+        var host = gitlabSection.GetValue<string>("Endpoint")!.TrimEnd('/');
+        var accessToken = gitlabSection.GetValue<string>("AccessToken");
+        
+        Client = new GitLabClient(host, accessToken);
         _http = new HttpClient
         {
-            BaseAddress = new Uri(gitlabSection.GetValue<string>("Endpoint")!.TrimEnd('/')),
-            DefaultRequestHeaders =
-            {
-                Authorization =
-                    AuthenticationHeaderValue.Parse($"Bearer {gitlabSection.GetValue<string>("AccessToken")}")
-            }
+            BaseAddress = new Uri(host),
+            DefaultRequestHeaders = { Authorization = AuthenticationHeaderValue.Parse($"Bearer {accessToken}") }
         };
     }
 
