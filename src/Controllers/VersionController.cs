@@ -12,7 +12,7 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public async Task<ActionResult<object>> GetLatestStable(
+    public ActionResult<object> GetLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache,
         [FromQuery] string? os = null,
         [FromQuery] string? arch = null
@@ -65,7 +65,7 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public async Task<ActionResult<object>> GetLatestCanary(
+    public ActionResult<object> GetLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache,
         [FromQuery] string? os = null,
         [FromQuery] string? arch = null
@@ -118,7 +118,7 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public async Task<ActionResult<VersionCache.Entry>> GetSpecificStable(
+    public ActionResult<VersionCache.Entry> GetSpecificStable(
         [FromKeyedServices("stableCache")] VersionCache vcache,
         string version
     )
