@@ -36,20 +36,14 @@ cd src
 
 pub linux-arm64 $1
 pub linux-x64 $1
-pub win-arm64 $1
 pub win-x64 $1
-pub osx-arm64 $1
-pub osx-x64 $1
 
 cd ../
 echo "Packaging builds..."
 
 pack linux-arm64 $1
 pack linux-x64 $1
-pack win-arm64 $1
 pack win-x64 $1
-pack osx-arm64 $1
-pack osx-x64 $1
 
 mv build/linux-x64/appsettings.json artifacts/appsettings.json
 
