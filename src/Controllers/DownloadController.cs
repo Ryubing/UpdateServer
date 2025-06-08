@@ -14,9 +14,10 @@ public class DownloadController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<object> DownloadLatestCustom(
-        [FromQuery] string? os,
-        [FromQuery] string? arch,
-        [FromQuery] string? rc = "stable"
+        [FromQuery] string os,
+        [FromQuery] string arch,
+        [FromQuery] string rc = "stable",
+        [FromQuery] string version = "latest"
         )
     {
         if (rc is not ("stable" or "canary"))
@@ -26,26 +27,26 @@ public class DownloadController : ControllerBase
             ? "stableCache"
             : "canaryCache");
 
-        var latest = versionCache.Latest;
+        var release = version is "latest" ? versionCache.Latest : versionCache[version];
         
-        if (latest is null)
+        if (release is null)
             return NotFound();
 
         if (os is "mac" or "osx" or "macos")
-            return Redirect(latest.Downloads.MacOS);
+            return Redirect(release.Downloads.MacOS);
         
-        var platform = os?.ToLower() switch
+        var platform = os.ToLower() switch
         {
-            "win" or "w" or "windows" => latest.Downloads.Windows,
-            "lin" or "l" or "linux" => latest.Downloads.Linux,
-            "ai" or "appimage" or "linuxappimage" or "linuxai" => latest.Downloads.LinuxAppImage,
+            "win" or "w" or "windows" => release.Downloads.Windows,
+            "lin" or "l" or "linux" => release.Downloads.Linux,
+            "ai" or "appimage" or "linuxappimage" or "linuxai" => release.Downloads.LinuxAppImage,
             _ => null
         };
 
         if (platform is null && os is not null)
             return BadRequest($"Unknown platform '{os}'");
 
-        var url = arch?.ToLower() switch
+        var url = arch.ToLower() switch
         {
             "arm64" or "a64" or "arm" => platform!.Arm64,
             "x64" or "x86-64" or "x86_64" or "amd64" => platform!.X64,
