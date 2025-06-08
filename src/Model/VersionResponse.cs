@@ -1,15 +1,16 @@
 ﻿using System.Text.Json.Serialization;
 using RyujinxUpdate.Services.GitLab;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace RyujinxUpdate.Model;
 
 public class VersionResponse
 {
     [JsonPropertyName("tag")]
-    public string Version { get; set; }
+    public required string Version { get; set; }
     
     [JsonPropertyName("download_url")]
-    public string ArtifactUrl { get; set; }
+    public required string ArtifactUrl { get; set; }
 }
 
 public class DownloadLinks

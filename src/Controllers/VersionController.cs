@@ -133,7 +133,7 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public async Task<ActionResult<VersionCache.Entry>> GetSpecificCanary(
+    public ActionResult<VersionCache.Entry> GetSpecificCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache,
         string version
     )
