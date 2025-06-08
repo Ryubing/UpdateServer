@@ -11,15 +11,18 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
     private readonly ILogger<VersionCache> _logger;
     private readonly PeriodicTimer _refreshTimer;
 
-
-    private (string Name, long Id)? _cachedProject;
+    private (string Name, long Id, string Path)? _cachedProject;
     
     private string? _latestTag;
+
+    private readonly string _gitlabEndpoint;
 
     public VersionCache(IConfiguration config, GitLabService gitlabService, ILogger<VersionCache> logger)
     {
         _gl = gitlabService;
         _logger = logger;
+
+        _gitlabEndpoint = config["GitLab:Endpoint"]!;
         
         if (config["GitLab:RefreshIntervalMinutes"] is not { } refreshIntervalStr)
         {
@@ -37,26 +40,28 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
         }
     }
 
+    public string FormatReleaseUrl(string tag) => $"{_gitlabEndpoint.TrimEnd('/')}/{_cachedProject!.Value.Path}/-/releases/{tag}";
+
     public void Init(ProjectId projectId) => Executor.ExecuteBackgroundAsync(async () =>
-    {
-        await Update(projectId);
-        while (await _refreshTimer.WaitForNextTickAsync())
-        {
-            await Update(projectId);
-        }
-    });
-
-    public Entry? Latest => this[_latestTag];
-
-    public async Task Update(ProjectId projectId)
     {
         if (!_cachedProject.HasValue)
         {
             var project = await _gl.Client.Projects.GetAsync(projectId);
 
-            _cachedProject = (project.NameWithNamespace, project.Id);
+            _cachedProject = (project.NameWithNamespace, project.Id, project.PathWithNamespace);
         }
         
+        await Update();
+        while (await _refreshTimer.WaitForNextTickAsync())
+        {
+            await Update();
+        }
+    });
+
+    public Entry? Latest => this[_latestTag ?? string.Empty];
+
+    public async Task Update()
+    {
         _logger.LogInformation("Reloading version cache for {project}", _cachedProject.Value.Name);
         
         _latestTag = (await _gl.GetLatestReleaseAsync(_cachedProject.Value.Id))?.TagName;
@@ -86,7 +91,7 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
             var linuxArm64AppImage = release.Assets.Links.First(x =>
                 x.AssetName.ContainsIgnoreCase("arm64") && x.AssetName.EndsWithIgnoreCase(".AppImage"));
             
-            temp.Add(new Entry
+            temp.Add(new Entry(this)
             {
                 Tag = release.TagName,
                 Downloads =
@@ -120,10 +125,15 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
 
     public class Entry
     {
-        [JsonPropertyName("tag")]
-        public string Tag { get; set; }
+        private readonly VersionCache _vcache;
         
-        [JsonPropertyName("downloads")] 
-        public DownloadLinks Downloads { get; } = new();
+        public Entry(VersionCache owner)
+        {
+            _vcache = owner;
+        }
+        
+        [JsonPropertyName("tag")] public required string Tag { get; set; }
+        [JsonPropertyName("web_url")] public string ReleaseUrl => _vcache.FormatReleaseUrl(Tag); 
+        [JsonPropertyName("downloads")] public DownloadLinks Downloads { get; } = new();
     }
 }

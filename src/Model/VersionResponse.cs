@@ -11,6 +11,9 @@ public class VersionResponse
     
     [JsonPropertyName("download_url")]
     public required string ArtifactUrl { get; set; }
+    
+    [JsonPropertyName("web_url")]
+    public required string ReleaseUrl { get; set; }
 }
 
 public class DownloadLinks

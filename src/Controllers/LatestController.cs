@@ -34,7 +34,8 @@ public class LatestController : ControllerBase
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = latest.Downloads.MacOS
+                ArtifactUrl = latest.Downloads.MacOS,
+                ReleaseUrl = versionCache.FormatReleaseUrl(latest.Tag)
             });
 
         var platform = os?.ToLower() switch
@@ -62,7 +63,8 @@ public class LatestController : ControllerBase
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = url
+                ArtifactUrl = url,
+                ReleaseUrl = versionCache.FormatReleaseUrl(latest.Tag)
             });
 
         return NotFound();

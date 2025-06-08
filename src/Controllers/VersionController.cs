@@ -27,7 +27,8 @@ public class VersionController : ControllerBase
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = latest.Downloads.MacOS
+                ArtifactUrl = latest.Downloads.MacOS,
+                ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
             });
         
         var platform = os?.ToLower() switch
@@ -55,7 +56,8 @@ public class VersionController : ControllerBase
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = url
+                ArtifactUrl = url,
+                ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
             });
         
         return Ok(latest);
@@ -80,7 +82,8 @@ public class VersionController : ControllerBase
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = latest.Downloads.MacOS
+                ArtifactUrl = latest.Downloads.MacOS,
+                ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
             });
         
         var platform = os?.ToLower() switch
@@ -108,7 +111,8 @@ public class VersionController : ControllerBase
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = url
+                ArtifactUrl = url,
+                ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
             });
         
         return Ok(latest);
