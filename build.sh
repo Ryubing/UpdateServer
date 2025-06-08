@@ -6,7 +6,7 @@ fi
 
 function pub {
   echo "Compiling for $1..."
-  dotnet publish -c Release -r $1 --self-contained -o ../build/$1/publish -p:Version="$2"
+  dotnet publish -c Release -r $1 --self-contained -o ../build/$1 -p:Version="$2"
 }
 
 function pack {
@@ -15,9 +15,10 @@ function pack {
   rm publish/appsettings.Development.json
   
   if stringContain "win" $1; then
-    7z a ../../artifacts/ryujinxupdate-v$2_$1.7z publish
+    mv RyujinxUpdate.exe ../../artifacts/RyujinxUpdate-v$2_$1.exe
   else
-    tar -czvf ../../artifacts/ryujinxupdate-v$2_$1.tar.gz publish
+    chmod +x RyujinxUpdate
+    mv RyujinxUpdate ../../artifacts/RyujinxUpdate-v$2_$1
   fi
   cd ../../
 }
@@ -49,6 +50,8 @@ pack win-arm64 $1
 pack win-x64 $1
 pack osx-arm64 $1
 pack osx-x64 $1
+
+mv build/linux-x64/appsettings.json artifacts/appsettings.json
 
 echo "Complete. You can find builds for all 6 OSes in build/. Pre-compressed archives are in artifacts/."
 
