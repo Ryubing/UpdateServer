@@ -80,52 +80,31 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
 
         var releases = await _gl.GetReleasesAsync(_cachedProject.Value.Id);
 
-        var temp = new List<Entry>();
-
         foreach (var release in releases)
         {
-            var windowsX64 = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("win_x64"));
-            //var windowsArm64 = release.Assets.Links.FirstOrDefault(x => x.Name.ContainsIgnoreCase("win_arm64"));
-            var linuxX64 = release.Assets.Links.First(x =>
-                x.AssetName.ContainsIgnoreCase("linux_x64") && !x.AssetName.EndsWithIgnoreCase(".AppImage"));
-            var linuxX64AppImage =
-                release.Assets.Links.First(x =>
-                    x.AssetName.ContainsIgnoreCase("x64") && x.AssetName.EndsWithIgnoreCase(".AppImage"));
-            var macOs = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("macos_universal"));
-            var linuxArm64 = release.Assets.Links.First(x =>
-                x.AssetName.ContainsIgnoreCase("linux_arm64") && !x.AssetName.EndsWithIgnoreCase(".AppImage"));
-            var linuxArm64AppImage = release.Assets.Links.First(x =>
-                x.AssetName.ContainsIgnoreCase("arm64") && x.AssetName.EndsWithIgnoreCase(".AppImage"));
-            
-            temp.Add(new Entry(this)
+            this[release.TagName] = new Entry(this)
             {
                 Tag = release.TagName,
                 Downloads =
                 {
                     Windows =
                     {
-                        X64 = windowsX64.Url,
+                        X64 = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("win_x64")).Url,
                         Arm64 = string.Empty
                     },
                     Linux =
                     {
-                        X64 = linuxX64.Url,
-                        Arm64 = linuxArm64.Url
+                        X64 = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("linux_x64")).Url,
+                        Arm64 = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("linux_arm64")).Url
                     },
                     LinuxAppImage =
                     {
-                        X64 = linuxX64AppImage.Url,
-                        Arm64 = linuxArm64AppImage.Url
+                        X64 = release.Assets.Links.First(x => x.AssetName.EndsWithIgnoreCase("x64.AppImage")).Url,
+                        Arm64 = release.Assets.Links.First(x => x.AssetName.EndsWithIgnoreCase("arm64.AppImage")).Url
                     },
-                    MacOS = macOs.Url
+                    MacOS = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("macos_universal")).Url
                 }
-            });
-        }
-
-        foreach (var entry in temp)
-        {
-            if (!ContainsKey(entry.Tag))
-                Add(entry.Tag, entry);
+            };
         }
     }
 
