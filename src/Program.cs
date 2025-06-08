@@ -8,6 +8,26 @@ const string ApiVersion = "v1";
 
 var builder = WebApplication.CreateBuilder(args);
 
+foreach (var (index, arg) in args.Index())
+{
+    switch (arg.ToLower())
+    {
+        case "--port":
+        case "-p":
+        {
+            if (index + 1 >= args.Length)
+                throw new Exception("port argument expects a value");
+
+            if (!int.TryParse(args[index + 1], out var port))
+                throw new Exception("port argument must be an integer");
+
+            builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(port));
+            
+            break;
+        }
+    }
+}
+
 var disableSwagger = args.ContainsIgnoreCase("--disable-swagger") || args.ContainsIgnoreCase("-ds");
 
 builder.Services.AddSingleton<GitLabService>();
