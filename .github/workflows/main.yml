@@ -46,6 +46,7 @@ jobs:
         with:
           name: "Ryubing UpdateServer V${{ steps.version_info.outputs.build_version }}"
           tag: ${{ steps.version_info.outputs.build_version }}
+          draft: 'false'
           artifacts: "artifacts/*"
           body: "**[Changes since last build](https://github.com/Ryubing/UpdateServer/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }})**"
           omitBodyDuringUpdate: true
