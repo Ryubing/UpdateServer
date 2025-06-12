@@ -15,10 +15,10 @@ function pack {
   rm appsettings.Development.json
   
   if stringContain "win" $1; then
-    mv Ryujinx.Systems.Updater.Server.exe ../../artifacts/RyujinxUpdateServer-v$2_$1.exe
+    mv Ryujinx.Systems.Update.Server.exe ../../artifacts/RyujinxUpdateServer-v$2_$1.exe
   else
-    chmod +x Ryujinx.Systems.Updater.Server
-    mv Ryujinx.Systems.Updater.Server ../../artifacts/RyujinxUpdateServer-v$2_$1
+    chmod +x Ryujinx.Systems.Update.Server
+    mv Ryujinx.Systems.Update.Server ../../artifacts/RyujinxUpdateServer-v$2_$1
   fi
   cd ../../
 }
