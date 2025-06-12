@@ -73,4 +73,38 @@ public class LatestController : ControllerBase
 
         return NotFound();
     }
+
+    [HttpGet("stable")]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> RedirectLatestStable(
+        [FromKeyedServices("stableCache")] VersionCache vcache)
+    {
+        var lck = await vcache.TakeLockAsync();
+        
+        var latest = vcache.Latest;
+        
+        lck.Dispose();
+
+        return latest is not null
+            ? Redirect(latest.ReleaseUrl)
+            : NotFound();
+    }
+    
+    [HttpGet("canary")]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> RedirectLatestCanary(
+        [FromKeyedServices("canaryCache")] VersionCache vcache)
+    {
+        var lck = await vcache.TakeLockAsync();
+        
+        var latest = vcache.Latest;
+        
+        lck.Dispose();
+
+        return latest is not null
+            ? Redirect(latest.ReleaseUrl)
+            : NotFound();
+    }
 }
