@@ -18,13 +18,13 @@ public class VersionResponse
 
 public class DownloadLinks
 {
-    [JsonPropertyName("windows")] public ArchitectureTuple Windows { get; } = new();
-    [JsonPropertyName("linux")] public ArchitectureTuple Linux { get; } = new();
-    [JsonPropertyName("linux_appimage")] public ArchitectureTuple LinuxAppImage { get; } = new();
+    [JsonPropertyName("windows")] public SupportedPlatform Windows { get; } = new();
+    [JsonPropertyName("linux")] public SupportedPlatform Linux { get; } = new();
+    [JsonPropertyName("linux_appimage")] public SupportedPlatform LinuxAppImage { get; } = new();
     // ReSharper disable once InconsistentNaming
     [JsonPropertyName("macOS")] public string MacOS { get; set; }
 
-    public class ArchitectureTuple
+    public class SupportedPlatform
     {
         [JsonPropertyName("x64")] public string X64 { get; set; }
         [JsonPropertyName("arm64")] public string Arm64 { get; set; }

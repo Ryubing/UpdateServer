@@ -85,7 +85,7 @@ public class DownloadController : ControllerBase
         if (uaString.ContainsIgnoreCase("Mac"))
             return Redirect(latest.Downloads.MacOS);
 
-        DownloadLinks.ArchitectureTuple platform = latest.Downloads.Windows;
+        DownloadLinks.SupportedPlatform platform = latest.Downloads.Windows;
         
         if (uaString.ContainsIgnoreCase("Linux"))
             platform = latest.Downloads.Linux;
@@ -116,7 +116,7 @@ public class DownloadController : ControllerBase
         if (uaString.ContainsIgnoreCase("Mac"))
             return Redirect(latest.Downloads.MacOS);
 
-        DownloadLinks.ArchitectureTuple platform = latest.Downloads.Windows;
+        DownloadLinks.SupportedPlatform platform = latest.Downloads.Windows;
         
         if (uaString.ContainsIgnoreCase("Linux"))
             platform = latest.Downloads.Linux;
