@@ -5,31 +5,31 @@ using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
 namespace Ryujinx.Systems.Updater.Server.Controllers;
 
-[Route("[controller]")]
+[Route(Constants.RouteName_Download)]
 [ApiController]
 public class DownloadController : ControllerBase
 {
-    [HttpGet("query")]
+    [HttpGet(Constants.QueryRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<object>> DownloadLatestCustom(
         [FromQuery] string os,
         [FromQuery] string arch,
-        [FromQuery] string rc = "stable",
-        [FromQuery] string version = "latest"
+        [FromQuery] string rc = Constants.StableRoute,
+        [FromQuery] string version = Constants.RouteName_Latest
         )
     {
-        if (rc is not ("stable" or "canary"))
-            return BadRequest($"Unknown release channel '{rc}'; valid are 'stable' and 'canary'");
+        if (rc is not (Constants.StableRoute or Constants.CanaryRoute))
+            return BadRequest($"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
 
-        var versionCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>(rc is "stable"
+        var versionCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>(rc is Constants.StableRoute
             ? "stableCache"
             : "canaryCache");
         
         var lck = await versionCache.TakeLockAsync();
 
-        var release = version is "latest" ? versionCache.Latest : versionCache[version];
+        var release = version is Constants.RouteName_Latest ? versionCache.Latest : versionCache[version];
         
         lck.Dispose();
         
@@ -64,7 +64,7 @@ public class DownloadController : ControllerBase
     }
     
     [HttpGet]
-    [HttpGet("stable")]
+    [HttpGet(Constants.StableRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<object>> DownloadLatestStable(
@@ -95,7 +95,7 @@ public class DownloadController : ControllerBase
             : platform.Arm64);
     }
     
-    [HttpGet("canary")]
+    [HttpGet(Constants.CanaryRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<object>> DownloadLatestCanary(

@@ -4,11 +4,11 @@ using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
 namespace Ryujinx.Systems.Updater.Server.Controllers;
 
-[Route("api/[controller]")]
+[Route($"{Constants.FullRouteName_Api_Version}")]
 [ApiController]
 public class VersionController : ControllerBase
 {
-    [HttpGet("stable/latest")]
+    [HttpGet($"{Constants.StableRoute}/{Constants.RouteName_Latest}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
@@ -67,7 +67,7 @@ public class VersionController : ControllerBase
         return Ok(latest);
     }
     
-    [HttpGet("canary/latest")]
+    [HttpGet($"{Constants.CanaryRoute}/{Constants.RouteName_Latest}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
@@ -126,7 +126,7 @@ public class VersionController : ControllerBase
         return Ok(latest);
     }
     
-    [HttpGet("stable/{version}")]
+    [HttpGet($"{Constants.StableRoute}/{{version}}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
@@ -144,7 +144,7 @@ public class VersionController : ControllerBase
         return NotFound();
     }
     
-    [HttpGet("canary/{version}")]
+    [HttpGet($"{Constants.CanaryRoute}/{{version}}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]

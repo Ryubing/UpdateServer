@@ -4,24 +4,24 @@ using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
 namespace Ryujinx.Systems.Updater.Server.Controllers;
 
-[Route("[controller]")]
+[Route(Constants.RouteName_Latest)]
 [ApiController]
 public class LatestController : ControllerBase
 {
-    [HttpGet("query")]
+    [HttpGet(Constants.QueryRoute)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<object>> GetLatestCustom(
         [FromQuery] string? os,
         [FromQuery] string? arch,
-        [FromQuery] string? rc = "stable"
+        [FromQuery] string? rc = Constants.StableRoute
     )
     {
-        if (rc is not ("stable" or "canary"))
-            return BadRequest($"Unknown release channel '{rc}'; valid are 'stable' and 'canary'");
+        if (rc is not (Constants.StableRoute or Constants.CanaryRoute))
+            return BadRequest($"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
 
-        var versionCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>(rc is "stable"
+        var versionCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>(rc is Constants.StableRoute
             ? "stableCache"
             : "canaryCache");
 
@@ -74,7 +74,7 @@ public class LatestController : ControllerBase
         return NotFound();
     }
 
-    [HttpGet("stable"), HttpGet]
+    [HttpGet(Constants.StableRoute), HttpGet]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> RedirectLatestStable(
@@ -91,7 +91,7 @@ public class LatestController : ControllerBase
             : NotFound();
     }
     
-    [HttpGet("canary")]
+    [HttpGet(Constants.CanaryRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> RedirectLatestCanary(
