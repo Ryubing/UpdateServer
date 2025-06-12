@@ -5,7 +5,7 @@ using RyujinxUpdate.Model;
 
 namespace RyujinxUpdate.Services.GitLab;
 
-public class VersionCache : SafeDictionary<string, VersionCache.Entry>
+public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 {
     private readonly GitLabService _gl;
     private readonly ILogger<VersionCache> _logger;
@@ -62,11 +62,11 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
 
     public Task<Extensions.ScopedSemaphoreLock> TakeLockAsync() => _semaphore.TakeAsync();
 
-    public Entry? Latest => this[_latestTag ?? string.Empty];
+    public VersionCacheEntry? Latest => this[_latestTag ?? string.Empty];
 
     public async Task Update()
     {
-        using var _ = await TakeLockAsync();
+        await _semaphore.WaitAsync();
         
         _logger.LogInformation("Reloading version cache for {project}", _cachedProject.Value.Name);
         
@@ -79,12 +79,15 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
         }
 
         var releases = await _gl.GetReleasesAsync(_cachedProject.Value.Id);
+        
+        Clear();
 
         foreach (var release in releases)
         {
-            this[release.TagName] = new Entry(this)
+            this[release.TagName] = new VersionCacheEntry
             {
                 Tag = release.TagName,
+                ReleaseUrl = FormatReleaseUrl(release.TagName),
                 Downloads =
                 {
                     Windows =
@@ -106,19 +109,7 @@ public class VersionCache : SafeDictionary<string, VersionCache.Entry>
                 }
             };
         }
-    }
 
-    public class Entry
-    {
-        private readonly VersionCache _vcache;
-        
-        public Entry(VersionCache owner)
-        {
-            _vcache = owner;
-        }
-        
-        [JsonPropertyName("tag")] public required string Tag { get; set; }
-        [JsonPropertyName("web_url")] public string ReleaseUrl => _vcache.FormatReleaseUrl(Tag); 
-        [JsonPropertyName("downloads")] public DownloadLinks Downloads { get; } = new();
+        _semaphore.Release();
     }
 }

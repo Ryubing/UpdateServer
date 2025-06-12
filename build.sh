@@ -6,19 +6,19 @@ fi
 
 function pub {
   echo "Compiling for $1..."
-  dotnet publish -c Release -r $1 --self-contained -o ../build/$1 -p:Version="$2"
+  dotnet publish -c Release -r $1 --self-contained -o ../../build/$1 -p:Version="$2"
 }
 
 function pack {
   cd build/$1
   
-  rm publish/appsettings.Development.json
+  rm appsettings.Development.json
   
   if stringContain "win" $1; then
-    mv RyujinxUpdate.exe ../../artifacts/RyujinxUpdate-v$2_$1.exe
+    mv Ryujinx.Systems.Updater.Server.exe ../../artifacts/RyujinxUpdateServer-v$2_$1.exe
   else
-    chmod +x RyujinxUpdate
-    mv RyujinxUpdate ../../artifacts/RyujinxUpdate-v$2_$1
+    chmod +x Ryujinx.Systems.Updater.Server
+    mv Ryujinx.Systems.Updater.Server ../../artifacts/RyujinxUpdateServer-v$2_$1
   fi
   cd ../../
 }
@@ -32,13 +32,13 @@ mkdir artifacts
 
 echo "Compiling..."
 
-cd src
+cd src/Ryujinx.Systems.Update.Server
 
 pub linux-arm64 $1
 pub linux-x64 $1
 pub win-x64 $1
 
-cd ../
+cd ../../
 echo "Packaging builds..."
 
 pack linux-arm64 $1
@@ -47,7 +47,7 @@ pack win-x64 $1
 
 mv build/linux-x64/appsettings.json artifacts/appsettings.json
 
-echo "Complete. You can find builds for all 6 OSes in build/. Pre-compressed archives are in artifacts/."
+echo "Complete. You can find builds for all 3 OSes in build/. Pre-made upload-ready versions are in artifacts/."
 
 if [ $2 != "false" ]; then
   read -n1 -r -p "Press any key to exit."  

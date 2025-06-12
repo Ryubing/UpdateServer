@@ -4,6 +4,8 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <Company>Ryubing</Company>
+        <Description>A server written in C# using ASP.NET for Ryubing updates, to reduce API spam on the self-hosted GitLab instance.</Description>
     </PropertyGroup>
     
     <PropertyGroup>
@@ -16,7 +18,13 @@
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5"/>
         <PackageReference Include="NGitLab" Version="8.7.0" />
         <PackageReference Include="NSwag.AspNetCore" Version="14.2.0" />
-        <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
+        <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" Condition="'$(Configuration)'=='Debug'" />
+        
+        <ProjectReference Include="../Ryujinx.Systems.Updater.Common/Ryujinx.Systems.Updater.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Model\" />
     </ItemGroup>
 
 </Project>

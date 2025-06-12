@@ -70,7 +70,7 @@ var versionCacheSection = app.Configuration.GetSection("GitLab").GetRequiredSect
 var stableSource = versionCacheSection.GetValue<string>("Stable");
 
 if (stableSource is null)
-    throw new ConfigurationErrorsException("Cannot start the server without a GitLab repository in GitLab:VersionCacheSources:Stable");
+    throw new Exception("Cannot start the server without a GitLab repository in GitLab:VersionCacheSources:Stable");
 
 app.Services.GetRequiredKeyedService<VersionCache>("stableCache").Init(new ProjectId(stableSource));
 
