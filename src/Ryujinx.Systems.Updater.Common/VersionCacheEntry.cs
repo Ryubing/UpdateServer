@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace RyujinxUpdate.Model;
+namespace Ryujinx.Systems.Updater.Common;
 
 public class VersionCacheEntry
 {

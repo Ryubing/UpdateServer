@@ -1,8 +1,7 @@
-using System.Configuration;
 using Gommon;
 using NGitLab.Models;
 using NSwag;
-using RyujinxUpdate.Services.GitLab;
+using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
 const string apiVersion = "v1";
 

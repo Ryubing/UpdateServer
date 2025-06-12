@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using RyujinxUpdate.Model;
-using RyujinxUpdate.Services.GitLab;
+using Ryujinx.Systems.Updater.Common;
+using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
-namespace RyujinxUpdate.Controllers;
+namespace Ryujinx.Systems.Updater.Server.Controllers;
 
 [Route("[controller]")]
 [ApiController]

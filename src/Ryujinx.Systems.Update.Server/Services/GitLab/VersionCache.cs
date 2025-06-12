@@ -1,9 +1,8 @@
-﻿using System.Text.Json.Serialization;
-using Gommon;
+﻿using Gommon;
 using NGitLab.Models;
-using RyujinxUpdate.Model;
+using Ryujinx.Systems.Updater.Common;
 
-namespace RyujinxUpdate.Services.GitLab;
+namespace Ryujinx.Systems.Updater.Server.Services.GitLab;
 
 public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 {
