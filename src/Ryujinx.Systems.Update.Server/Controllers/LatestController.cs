@@ -74,7 +74,7 @@ public class LatestController : ControllerBase
         return NotFound();
     }
 
-    [HttpGet("stable")]
+    [HttpGet("stable"), HttpGet]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> RedirectLatestStable(
