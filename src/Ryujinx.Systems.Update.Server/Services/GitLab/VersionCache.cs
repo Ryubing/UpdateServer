@@ -67,7 +67,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     {
         await _semaphore.WaitAsync();
         
-        _logger.LogInformation("Reloading version cache for {project}", _cachedProject.Value.Name);
+        _logger.LogInformation("Reloading version cache for {project}", _cachedProject!.Value.Name);
         
         _latestTag = (await _gl.GetLatestReleaseAsync(_cachedProject.Value.Id))?.TagName;
 
