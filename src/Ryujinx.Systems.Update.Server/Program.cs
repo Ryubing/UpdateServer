@@ -1,12 +1,17 @@
-using Gommon;
 using NGitLab.Models;
 using NSwag;
 using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
 const string apiVersion = "v1";
 
+#if DEBUG
+var useHttpLogging = true;
+var useSwagger = true;
+#else
 var useHttpLogging = false;
 var useSwagger = false;
+#endif
+
 int? listenToPort = null;
 
 foreach (var (index, arg) in args.Index())
@@ -79,7 +84,6 @@ if (useSwagger)
     app.MapOpenApi();
     app.UseSwaggerUi(opt =>
     {
-        opt.ServerUrl = app.Configuration["ServerUrl"];
         opt.DocumentPath = $"/openapi/{apiVersion}.json";
     });
 }
