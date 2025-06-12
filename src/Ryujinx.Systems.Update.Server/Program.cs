@@ -5,7 +5,9 @@ using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
 const string apiVersion = "v1";
 
-var builder = WebApplication.CreateBuilder(args);
+var useHttpLogging = false;
+var useSwagger = false;
+int? listenToPort = null;
 
 foreach (var (index, arg) in args.Index())
 {
@@ -20,20 +22,38 @@ foreach (var (index, arg) in args.Index())
             if (!int.TryParse(args[index + 1], out var port))
                 throw new Exception("port argument must be an integer");
 
-            builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(port));
+            listenToPort = port;
             
+            break;
+        }
+        case "--http-logging":
+        case "-l":
+        {
+            useHttpLogging = true;
+            break;
+        }
+        case "--enable-swagger":
+        case "-s":
+        {
+            useSwagger = true;
             break;
         }
     }
 }
 
-var enableSwagger = args.ContainsIgnoreCase("--enable-swagger") || args.ContainsIgnoreCase("-s");
+var builder = WebApplication.CreateBuilder(args);
+
+if (listenToPort != null)
+    builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(listenToPort.Value));
+
+if (useHttpLogging)
+    builder.Services.AddHttpLogging();
 
 builder.Services.AddSingleton<GitLabService>();
 builder.Services.AddKeyedSingleton<VersionCache>("stableCache");
 builder.Services.AddKeyedSingleton<VersionCache>("canaryCache");
 
-if (enableSwagger)
+if (useSwagger)
 {
     builder.Services.AddOpenApi(apiVersion);
     builder.Services.AddOpenApiDocument(opt =>
@@ -54,7 +74,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-if (enableSwagger)
+if (useSwagger)
 {
     app.MapOpenApi();
     app.UseSwaggerUi(opt =>
@@ -79,6 +99,9 @@ if (canarySource != null)
     app.Services.GetRequiredKeyedService<VersionCache>("canaryCache").Init(new ProjectId(canarySource));
 
 app.MapControllers();
+
+if (useHttpLogging)
+    app.UseHttpLogging();
 
 TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
 #pragma warning disable CA2254
