@@ -1,5 +1,6 @@
 using Gommon;
 using Microsoft.AspNetCore.Mvc;
+using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Updater.Common;
 using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
@@ -20,12 +21,10 @@ public class DownloadController : ControllerBase
         [FromQuery] string version = Constants.RouteName_Latest
         )
     {
-        if (rc is not (Constants.StableRoute or Constants.CanaryRoute))
+        if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return BadRequest($"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
 
-        var versionCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>(rc is Constants.StableRoute
-            ? "stableCache"
-            : "canaryCache");
+        var versionCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>($"{releaseChannel.AsQueryStringValue()}Cache");
         
         var lck = await versionCache.TakeLockAsync();
 
@@ -35,32 +34,14 @@ public class DownloadController : ControllerBase
         
         if (release is null)
             return NotFound();
-
-        if (os is "mac" or "osx" or "macos")
-            return Redirect(release.Downloads.MacOS);
         
-        var platform = os.ToLower() switch
-        {
-            "win" or "w" or "windows" => release.Downloads.Windows,
-            "lin" or "l" or "linux" => release.Downloads.Linux,
-            "ai" or "appimage" or "linuxappimage" or "linuxai" => release.Downloads.LinuxAppImage,
-            _ => null
-        };
-
-        if (platform is null)
+        if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
             return BadRequest($"Unknown platform '{os}'");
-
-        var url = arch.ToLower() switch
-        {
-            "arm64" or "a64" or "arm" => platform.Arm64,
-            "x64" or "x86-64" or "x86_64" or "amd64" => platform.X64,
-            _ => null
-        };
         
-        if (url is null)
+        if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
             return BadRequest($"Unknown architecture '{arch}'");
         
-        return Redirect(url);
+        return Redirect(release.GetUrlFor(supportedPlatform, supportedArch));
     }
     
     [HttpGet]

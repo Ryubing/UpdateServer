@@ -10,11 +10,21 @@ public static partial class EnumExtensions
 {
     public static string AsQueryStringValue(this ReleaseChannel rc) =>
         Enum.GetName(rc)?.ToLower() ?? throw new ArgumentOutOfRangeException(nameof(rc));
-    
-    public static ReleaseChannel? TryParseAsReleaseChannel(this string? rc) => rc?.ToLower() switch
+
+    public static bool TryParseAsReleaseChannel(this string? rawRc, out ReleaseChannel rc)
     {
-        "stable" => ReleaseChannel.Stable,
-        "canary" => ReleaseChannel.Canary,
-        _ => null
-    };
+        rc = default;
+        ReleaseChannel? tempRc = rawRc?.ToLower() switch
+        {
+            "stable" => ReleaseChannel.Stable,
+            "canary" => ReleaseChannel.Canary,
+            _ => null
+        };
+
+        if (!tempRc.HasValue)
+            return false;
+
+        rc = tempRc.Value;
+        return true;
+    }
 }

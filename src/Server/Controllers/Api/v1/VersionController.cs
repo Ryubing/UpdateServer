@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Updater.Common;
 using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
@@ -26,45 +27,19 @@ public class VersionController : ControllerBase
         
         if (latest is null)
             return NotFound();
-
-        if (os is "mac" or "osx" or "macos")
-            return Ok(new VersionResponse
-            {
-                Version = latest.Tag,
-                ArtifactUrl = latest.Downloads.MacOS,
-                ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
-            });
         
-        var platform = os?.ToLower() switch
-        {
-            "win" or "w" or "windows" => latest.Downloads.Windows,
-            "lin" or "l" or "linux" => latest.Downloads.Linux,
-            "ai" or "appimage" or "linuxappimage" or "linuxai" => latest.Downloads.LinuxAppImage,
-            _ => null
-        };
-
-        if (platform is null && os is not null)
+        if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
             return BadRequest($"Unknown platform '{os}'");
-
-        var url = arch?.ToLower() switch
-        {
-            "arm64" or "a64" or "arm" => platform!.Arm64,
-            "x64" or "x86-64" or "x86_64" or "amd64" => platform!.X64,
-            _ => null
-        };
         
-        if (url is null && arch is not null)
+        if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
             return BadRequest($"Unknown architecture '{arch}'");
-
-        if (url is not null)
-            return Ok(new VersionResponse
-            {
-                Version = latest.Tag,
-                ArtifactUrl = url,
-                ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
-            });
         
-        return Ok(latest);
+        return Ok(new VersionResponse
+        {
+            Version = latest.Tag,
+            ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
+            ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
+        });
     }
     
     [HttpGet($"{Constants.CanaryRoute}/{Constants.RouteName_Latest}")]
@@ -86,44 +61,18 @@ public class VersionController : ControllerBase
         if (latest is null)
             return NotFound();
 
-        if (os is "mac" or "osx" or "macos")
-            return Ok(new VersionResponse
-            {
-                Version = latest.Tag,
-                ArtifactUrl = latest.Downloads.MacOS,
-                ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
-            });
-        
-        var platform = os?.ToLower() switch
-        {
-            "win" or "w" or "windows" => latest.Downloads.Windows,
-            "lin" or "l" or "linux" => latest.Downloads.Linux,
-            "ai" or "appimage" or "linuxappimage" or "linuxai" => latest.Downloads.LinuxAppImage,
-            _ => null
-        };
-
-        if (platform is null && os is not null)
+        if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
             return BadRequest($"Unknown platform '{os}'");
-
-        var url = arch?.ToLower() switch
-        {
-            "arm64" or "a64" or "arm" => platform!.Arm64,
-            "x64" or "x86-64" or "x86_64" or "amd64" => platform!.X64,
-            _ => null
-        };
         
-        if (url is null && arch is not null)
+        if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
             return BadRequest($"Unknown architecture '{arch}'");
 
-        if (url is not null)
-            return Ok(new VersionResponse
-            {
-                Version = latest.Tag,
-                ArtifactUrl = url,
-                ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
-            });
-        
-        return Ok(latest);
+        return Ok(new VersionResponse
+        {
+            Version = latest.Tag,
+            ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
+            ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
+        });
     }
     
     [HttpGet($"{Constants.StableRoute}/{{version}}")]

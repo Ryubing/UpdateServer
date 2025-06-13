@@ -17,13 +17,23 @@ public static partial class EnumExtensions
         SupportedPlatform.Mac => "mac",
         _ => throw new ArgumentOutOfRangeException(nameof(supportedPlatform))
     };
-    
-    public static SupportedPlatform? TryParseAsSupportedPlatform(this string? os) => os?.ToLower() switch
+
+    public static bool TryParseAsSupportedPlatform(this string? os, out SupportedPlatform platform)
     {
-        "w" or "win" or "windows" => SupportedPlatform.Windows,
-        "l" or "lin" or "linux" => SupportedPlatform.Linux,
-        "ai" or "appimage" or "linuxappimage" or "linuxai" => SupportedPlatform.LinuxAppImage,
-        "m" or "mac" or "osx" or "macos" => SupportedPlatform.Mac, 
-        _ => null
-    };
+        platform = default;
+        SupportedPlatform? temp = os?.ToLower() switch
+        {
+            "w" or "win" or "windows" => SupportedPlatform.Windows,
+            "l" or "lin" or "linux" => SupportedPlatform.Linux,
+            "ai" or "appimage" or "linuxappimage" or "linuxai" => SupportedPlatform.LinuxAppImage,
+            "m" or "mac" or "osx" or "macos" => SupportedPlatform.Mac,
+            _ => null
+        };
+
+        if (!temp.HasValue)
+            return false;
+
+        platform = temp.Value;
+        return true;
+    }
 }

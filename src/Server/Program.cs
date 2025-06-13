@@ -1,5 +1,6 @@
 using NGitLab.Models;
 using NSwag;
+using Ryujinx.Systems.Updater.Server.Controllers.Admin;
 using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
 const string apiVersion = "v1";
@@ -111,5 +112,9 @@ TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
 #pragma warning disable CA2254
     app.Logger.LogError(eventArgs.Exception.InnerException ?? eventArgs.Exception, null);
 #pragma warning restore CA2254
+
+var adminSec = app.Configuration.GetSection("Admin");
+if (adminSec.Exists() && adminSec.GetValue<string>("AccessToken") is { } accessToken and not "")
+    RefreshCacheController.Meta = (true, accessToken);
 
 app.Run();

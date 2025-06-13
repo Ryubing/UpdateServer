@@ -1,5 +1,6 @@
 ﻿using Gommon;
 using NGitLab.Models;
+using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Updater.Common;
 
 namespace Ryujinx.Systems.Updater.Server.Services.GitLab;
@@ -8,7 +9,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 {
     private readonly GitLabService _gl;
     private readonly ILogger<VersionCache> _logger;
-    private readonly PeriodicTimer _refreshTimer;
+    private readonly PeriodicTimer? _refreshTimer;
 
     private (string Name, long Id, string Path)? _cachedProject;
     
@@ -30,9 +31,17 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             _refreshTimer = new(TimeSpan.FromMinutes(5));
             return;
         }
-        
+
         if (int.TryParse(refreshIntervalStr, out var minutes))
-            _refreshTimer = new (TimeSpan.FromMinutes(minutes));
+        {
+            if (minutes < 0)
+            {
+                logger.LogInformation("Config value 'GitLab:RefreshIntervalSeconds' is a negative value. Disabling auto cache refreshes.");
+                _refreshTimer = null;
+            }
+            else
+                _refreshTimer = new (TimeSpan.FromMinutes(minutes));
+        }
         else
         {
             logger.LogWarning(
@@ -53,7 +62,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         }
         
         await Update();
-        while (await _refreshTimer.WaitForNextTickAsync())
+        while (_refreshTimer != null && await _refreshTimer.WaitForNextTickAsync())
         {
             await Update();
         }
