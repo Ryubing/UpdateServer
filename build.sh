@@ -27,7 +27,9 @@ stringContain() { case $2 in *$1* ) return 0;; *) return 1;; esac ;}
 
 echo "Cleaning previous build & packages..."
 rm -rf build
+rm -rf nuget_build
 rm -rf artifacts
+
 mkdir artifacts
 
 echo "Compiling server..."
@@ -44,6 +46,11 @@ echo "Packaging builds..."
 pack linux-arm64 $1
 pack linux-x64 $1
 pack win-x64 $1
+
+echo "Compiling client library..."
+cd src/Client
+dotnet build -o ../../nuget_build -p:Version="$1"
+cd ../../
 
 mv build/linux-x64/appsettings.json artifacts/appsettings.json
 

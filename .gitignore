@@ -2,6 +2,7 @@ bin/
 obj/
 artifacts/
 build/
+nuget_build/
 /packages/
 .idea/
 riderModule.iml
