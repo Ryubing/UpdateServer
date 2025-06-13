@@ -44,7 +44,7 @@ jobs:
       - name: Publish Client library
         run: |
           dotnet nuget add source "https://git.ryujinx.app/api/v4/projects/71/packages/nuget/index.json" --name gitlab --username ryuadmin --password ${{ secrets.GITLAB_TOKEN }} --store-password-in-clear-text
-          dotnet nuget push "nuget_build/*.nupkg" --source gitlab
+          dotnet nuget push "nuget_build/Ryujinx.UpdateClient.${{ steps.version_info.outputs.build_version }}.nupkg" --source gitlab
 
       - name: Create release
         uses: ncipollo/release-action@v1
