@@ -30,9 +30,9 @@ rm -rf build
 rm -rf artifacts
 mkdir artifacts
 
-echo "Compiling..."
+echo "Compiling server..."
 
-cd src/Ryujinx.Systems.Update.Server
+cd src/Server
 
 pub linux-arm64 $1
 pub linux-x64 $1

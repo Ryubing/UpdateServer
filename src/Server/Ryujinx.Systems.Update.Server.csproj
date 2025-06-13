@@ -20,7 +20,7 @@
         <PackageReference Include="NSwag.AspNetCore" Version="14.2.0" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" Condition="'$(Configuration)'=='Debug'" />
         
-        <ProjectReference Include="../Ryujinx.Systems.Update.Common/Ryujinx.Systems.Update.Common.csproj" />
+        <ProjectReference Include="../Common/Ryujinx.Systems.Update.Common.csproj" />
     </ItemGroup>
 
 </Project>

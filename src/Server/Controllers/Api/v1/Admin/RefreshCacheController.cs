@@ -52,6 +52,6 @@ public class RefreshCacheController : ControllerBase
         else
             _lastManualRefresh.Canary = DateTimeOffset.Now;
 
-        return Ok();
+        return Accepted();
     }
 }

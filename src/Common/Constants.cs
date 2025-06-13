@@ -1,6 +1,6 @@
 ﻿namespace Ryujinx.Systems.Updater.Common;
 
-public static class Constants
+internal static class Constants
 {
     public const string CurrentApiVersion = API_v1;
     public const string API_v1 = "v1";

@@ -1,8 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ryujinx.Systems.Update.Server", "src\Ryujinx.Systems.Update.Server\Ryujinx.Systems.Update.Server.csproj", "{070D2DBE-F4F9-4BEA-82F4-5AEE8D901FCD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "src\Server\Ryujinx.Systems.Update.Server.csproj", "{070D2DBE-F4F9-4BEA-82F4-5AEE8D901FCD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ryujinx.Systems.Update.Common", "src\Ryujinx.Systems.Update.Common\Ryujinx.Systems.Update.Common.csproj", "{0F17314D-448F-4881-B2C3-6437FE3DB8EE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "src\Common\Ryujinx.Systems.Update.Common.csproj", "{0F17314D-448F-4881-B2C3-6437FE3DB8EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "src\Client\Ryujinx.Systems.Update.Client.csproj", "{D5199953-34C0-4E81-AF00-82602F83C782}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{36F870C1-3E5F-485F-B426-F0645AF78751}"
 	ProjectSection(SolutionItems) = preProject
@@ -24,5 +26,9 @@ Global
 		{0F17314D-448F-4881-B2C3-6437FE3DB8EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F17314D-448F-4881-B2C3-6437FE3DB8EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F17314D-448F-4881-B2C3-6437FE3DB8EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5199953-34C0-4E81-AF00-82602F83C782}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5199953-34C0-4E81-AF00-82602F83C782}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5199953-34C0-4E81-AF00-82602F83C782}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5199953-34C0-4E81-AF00-82602F83C782}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
