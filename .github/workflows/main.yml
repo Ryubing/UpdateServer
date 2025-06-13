@@ -51,8 +51,12 @@ jobs:
       - name: Compile
         run: bash build.sh ${{ steps.version_info.outputs.build_version }} false
         
-      - name: Publish Client library
+      - name: Compile & publish client library
         run: |
+          cd src/Client
+          dotnet build -o ../../nuget_build -p:Version="${{ steps.version_info.outputs.build_version }}" -p:PackageReleaseNotes="https://git.ryujinx.app/ryubing/update-server/-/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }}"
+          cd ../../
+          
           dotnet nuget add source "https://git.ryujinx.app/api/v4/projects/71/packages/nuget/index.json" --name gitlab --username ryuadmin --password ${{ secrets.GITLAB_TOKEN }} --store-password-in-clear-text
           dotnet nuget push "nuget_build/Ryujinx.UpdateClient.${{ steps.version_info.outputs.build_version }}.nupkg" --source gitlab
 

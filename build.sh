@@ -47,11 +47,6 @@ pack linux-arm64 $1
 pack linux-x64 $1
 pack win-x64 $1
 
-echo "Compiling client library..."
-cd src/Client
-dotnet build -o ../../nuget_build -p:Version="$1"
-cd ../../
-
 mv build/linux-x64/appsettings.json artifacts/appsettings.json
 
 echo "Complete. You can find builds for all 3 OSes in build/. Pre-made upload-ready versions are in artifacts/."
