@@ -24,6 +24,9 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
+        name: "Checkout code"
+        
       - name: Get version info
         id: version_info
         run: |
@@ -41,8 +44,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/checkout@v4
-        name: "Checkout code"
       - uses: actions/setup-dotnet@v4
         name: "Install .NET SDK"
         with:
