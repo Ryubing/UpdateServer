@@ -6,17 +6,19 @@ public class UpdateClientConfig
     {
         ServerEndpoint = serverEndpoint,
         AdminAccessToken = null,
-        Logger = (format, args) => Console.WriteLine(args.Length == 0 ? format : string.Format(format, args))
+        Logger = (arg, formatArgs) => 
+            Console.WriteLine(formatArgs.Length == 0 ? arg.MessageFormat : string.Format(arg.MessageFormat, formatArgs))
     };
     
     public static UpdateClientConfig WithAuthorization(string accessToken, string serverEndpoint = "https://update.ryujinx.app") => new()
     {
         ServerEndpoint = serverEndpoint,
         AdminAccessToken = accessToken,
-        Logger = (format, args) => Console.WriteLine(args.Length == 0 ? format : string.Format(format, args))
+        Logger = (arg, formatArgs) 
+            => Console.WriteLine(formatArgs.Length == 0 ? arg.MessageFormat : string.Format(arg.MessageFormat, formatArgs))
     };
     
-    public required Action<string, object[]> Logger;
+    public required Action<(string MessageFormat, string Caller), object[]> Logger;
     public required string ServerEndpoint { get; set; }
     public required string? AdminAccessToken { get; init; }
 
