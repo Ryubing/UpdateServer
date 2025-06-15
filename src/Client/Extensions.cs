@@ -1,4 +1,7 @@
 ﻿namespace Ryujinx.Systems.Update.Client;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedType.Global
 
 public static class Extensions
 {

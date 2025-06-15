@@ -1,4 +1,6 @@
 ﻿namespace Ryujinx.Systems.Update.Client;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 public class UpdateClientConfig
 {
