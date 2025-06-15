@@ -2,6 +2,8 @@
 using System.Runtime.InteropServices;
 using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Updater.Common;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Ryujinx.Systems.Update.Client;
 

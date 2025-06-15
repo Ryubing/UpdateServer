@@ -14,6 +14,7 @@ public class VersionCacheEntry
         if (platform is SupportedPlatform.Mac)
             return Downloads.MacOS;
         
+        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
         var p = platform switch
         {
             SupportedPlatform.Windows => Downloads.Windows,

@@ -1,4 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Ryujinx.Systems.Update.Client;
 
