@@ -19,14 +19,14 @@ public class VersionCacheEntry
             SupportedPlatform.Windows => Downloads.Windows,
             SupportedPlatform.Linux => Downloads.Linux,
             SupportedPlatform.LinuxAppImage => Downloads.LinuxAppImage,
-            _ => throw new ArgumentOutOfRangeException()
+            _ => throw new ArgumentOutOfRangeException(nameof(platform))
         };
         
         return architecture switch
         {
             SupportedArchitecture.Arm64 => p.Arm64,
             SupportedArchitecture.Amd64 => p.X64,
-            _ => throw new ArgumentOutOfRangeException()
+            _ => throw new ArgumentOutOfRangeException(nameof(architecture))
         };
     }
 }
