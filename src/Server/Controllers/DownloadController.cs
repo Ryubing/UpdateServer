@@ -1,6 +1,7 @@
 using Gommon;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server;
 using Ryujinx.Systems.Updater.Common;
 using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
@@ -24,7 +25,7 @@ public class DownloadController : ControllerBase
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return BadRequest($"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
 
-        var versionCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>($"{releaseChannel.AsQueryStringValue()}Cache");
+        var versionCache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
         
         var lck = await versionCache.TakeLockAsync();
 

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server;
 using Ryujinx.Systems.Updater.Common;
 using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
@@ -41,7 +42,7 @@ public class RefreshCacheController : ControllerBase
         if (minutesSinceLastRefresh <= 1)
             return Problem("Try again later.", statusCode: 429);
 
-        var vcache = HttpContext.RequestServices.GetKeyedService<VersionCache>($"{releaseChannel.AsQueryStringValue()}Cache")!;
+        var vcache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
 
         await vcache.Update();
         

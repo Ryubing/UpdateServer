@@ -38,7 +38,8 @@ public class VersionController : ControllerBase
         {
             Version = latest.Tag,
             ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
-            ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
+            ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag),
+            ReleaseUrlFormat = vcache.FormatReleaseUrlFormat()
         });
     }
     
@@ -71,7 +72,8 @@ public class VersionController : ControllerBase
         {
             Version = latest.Tag,
             ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
-            ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag)
+            ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag),
+            ReleaseUrlFormat = vcache.FormatReleaseUrlFormat()
         });
     }
     

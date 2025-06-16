@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server;
 using Ryujinx.Systems.Updater.Common;
 using Ryujinx.Systems.Updater.Server.Services.GitLab;
 
@@ -23,13 +24,11 @@ public class LatestController : ControllerBase
             return BadRequest(
                 $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
 
-        var versionCache =
-            HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>(
-                $"{releaseChannel.AsQueryStringValue()}Cache");
+        var vcache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
 
-        var lck = await versionCache.TakeLockAsync();
+        var lck = await vcache.TakeLockAsync();
 
-        var latest = versionCache.Latest;
+        var latest = vcache.Latest;
 
         lck.Dispose();
 
@@ -46,7 +45,8 @@ public class LatestController : ControllerBase
         {
             Version = latest.Tag,
             ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
-            ReleaseUrl = versionCache.FormatReleaseUrl(latest.Tag)
+            ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag),
+            ReleaseUrlFormat = vcache.FormatReleaseUrlFormat()
         });
     }
 

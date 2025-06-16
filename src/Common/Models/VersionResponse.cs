@@ -14,6 +14,9 @@ public class VersionResponse
     
     [JsonPropertyName("web_url")]
     public required string ReleaseUrl { get; set; }
+    
+    [JsonPropertyName("web_url_format")]
+    public required string ReleaseUrlFormat { get; set; }
 }
 
 public class DownloadLinks
