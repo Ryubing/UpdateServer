@@ -36,7 +36,7 @@ public partial class UpdateClient : IDisposable
     }
     
     private void Log(string format, IEnumerable<object> args, [CallerMemberName] string caller = null!) 
-        => _config.Logger((format, caller), args.ToArray());
+        => _config.Logger(format, args.ToArray(), caller);
     
     private void ApplyAuthorization(HttpRequestMessage httpRequest)
     {
