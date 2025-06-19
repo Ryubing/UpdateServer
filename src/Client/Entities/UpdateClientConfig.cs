@@ -17,14 +17,14 @@ public class UpdateClientConfig
     #region Factory methods
 
     public static UpdateClientConfig StandardUnauthorized(string serverEndpoint = "https://update.ryujinx.app")
-        => new Builder()
+        => new BuilderApi()
             .WithServerEndpoint(serverEndpoint)
             .WithStdOutLogger()
             .Build();
 
     public static UpdateClientConfig StandardAuthorized(string accessToken,
         string serverEndpoint = "https://update.ryujinx.app")
-        => new Builder()
+        => new BuilderApi()
             .WithServerEndpoint(serverEndpoint)
             .WithAccessToken(accessToken)
             .WithStdOutLogger()
@@ -32,37 +32,41 @@ public class UpdateClientConfig
 
     #endregion
 
-    public class Builder
+    public static BuilderApi Builder() => new();
+
+    public class BuilderApi
     {
         // default is no logging
         public UpdateClientLogCallback Logger { get; private set; } = (_, _, _) => { };
         public string ServerEndpoint { get; private set; } = "https://update.ryujinx.app";
         public string? AdminAccessToken { get; private set; }
 
-        public Builder WithStdOutLogger()
+        public BuilderApi WithStdOutLogger()
         {
             Logger = (format, args, _) =>
                 Console.WriteLine(args.Length == 0 ? format : string.Format(format, args));
             return this;
         }
         
-        public Builder WithLogger(UpdateClientLogCallback callback)
+        public BuilderApi WithLogger(UpdateClientLogCallback callback)
         {
             Logger = callback;
             return this;
         }
         
-        public Builder WithServerEndpoint(string serverEndpoint)
+        public BuilderApi WithServerEndpoint(string serverEndpoint)
         {
             ServerEndpoint = serverEndpoint ?? throw new NullReferenceException("Cannot use null as a server endpoint.");
             return this;
         }
 
-        public Builder WithAccessToken(string accessToken)
+        public BuilderApi WithAccessToken(string accessToken)
         {
             AdminAccessToken = accessToken;
             return this;
         }
+        
+        public static implicit operator UpdateClientConfig(BuilderApi builder) => builder.Build();
 
         public UpdateClientConfig Build()
             => new()
