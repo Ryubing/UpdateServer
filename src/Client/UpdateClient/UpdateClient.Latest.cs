@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Json;
 using System.Runtime.InteropServices;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Updater.Common;
+
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedType.Global

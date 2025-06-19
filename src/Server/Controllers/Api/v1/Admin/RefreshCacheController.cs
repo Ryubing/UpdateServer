@@ -2,10 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Update.Server;
-using Ryujinx.Systems.Updater.Common;
-using Ryujinx.Systems.Updater.Server.Services.GitLab;
+using Ryujinx.Systems.Update.Server.Services.GitLab;
 
-namespace Ryujinx.Systems.Updater.Server.Controllers.Admin;
+namespace Ryujinx.Systems.Update.Server.Controllers.Admin;
 
 [Route(Constants.FullRouteName_Api_Admin_RefreshCache)]
 [ApiController]

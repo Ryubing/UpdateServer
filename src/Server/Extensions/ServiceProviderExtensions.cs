@@ -1,5 +1,5 @@
 ﻿using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Updater.Server.Services.GitLab;
+using Ryujinx.Systems.Update.Server.Services.GitLab;
 
 namespace Ryujinx.Systems.Update.Server;
 

@@ -1,7 +1,7 @@
 using NGitLab.Models;
 using NSwag;
-using Ryujinx.Systems.Updater.Server.Controllers.Admin;
-using Ryujinx.Systems.Updater.Server.Services.GitLab;
+using Ryujinx.Systems.Update.Server.Controllers.Admin;
+using Ryujinx.Systems.Update.Server.Services.GitLab;
 
 const string apiVersion = "v1";
 

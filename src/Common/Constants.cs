@@ -1,6 +1,6 @@
 ﻿// ReSharper disable InconsistentNaming
 // ReSharper disable MemberCanBePrivate.Global
-namespace Ryujinx.Systems.Updater.Common;
+namespace Ryujinx.Systems.Update.Common;
 
 internal static class Constants
 {

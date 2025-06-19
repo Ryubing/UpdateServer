@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using NGitLab;
 
-namespace Ryujinx.Systems.Updater.Server.Services.GitLab;
+namespace Ryujinx.Systems.Update.Server.Services.GitLab;
 
 public class GitLabService
 {

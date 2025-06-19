@@ -1,9 +1,8 @@
 ﻿using Gommon;
 using NGitLab.Models;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Updater.Common;
 
-namespace Ryujinx.Systems.Updater.Server.Services.GitLab;
+namespace Ryujinx.Systems.Update.Server.Services.GitLab;
 
 public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 {
