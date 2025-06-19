@@ -27,7 +27,7 @@ public partial class UpdateClient
                   $"&arch={arch.AsQueryStringValue()}" +
                   $"&rc={rc.AsQueryStringValue()}";
 
-        Log("Checking for updates from: {0}", [url]);
+        Log("Checking for updates from: {0}", [QualifyUriPath(url)]);
 
         var resp = await _http.GetAsync(url);
 

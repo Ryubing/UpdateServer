@@ -28,7 +28,7 @@ public partial class UpdateClient
                   $"&rc={rc.AsQueryStringValue()}" +
                   $"&version={version}";
         
-        Log("Downloading the file from: {0}", [url]);
+        Log("Downloading the file from: {0}", [QualifyUriPath(url)]);
         
         var resp = await _http.GetAsync(url);
 

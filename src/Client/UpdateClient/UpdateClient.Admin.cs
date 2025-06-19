@@ -18,7 +18,7 @@ public partial class UpdateClient
     {
         if (!_config.CanUseAdminEndpoints)
         {
-            Log("Cannot use {0} endpoint, as there is no configured admin access token.", [nameof(RefreshVersionCacheAsync)]);
+            Log("Cannot request cache refresh, as there is no configured admin access token.");
             return null;
         }
         

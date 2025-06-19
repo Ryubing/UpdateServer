@@ -34,9 +34,11 @@ public partial class UpdateClient : IDisposable
         _http.Dispose();
         GC.SuppressFinalize(this);
     }
+
+    private string QualifyUriPath(string path) => $"{_config.ServerEndpoint.TrimEnd('/')}/{path}";
     
-    private void Log(string format, IEnumerable<object> args, [CallerMemberName] string caller = null!) 
-        => _config.Logger(format, args.ToArray(), caller);
+    private void Log(string format, IEnumerable<object>? args = null, [CallerMemberName] string caller = null!) 
+        => _config.Logger(format, args?.ToArray() ?? [], caller);
     
     private void ApplyAuthorization(HttpRequestMessage httpRequest)
     {
