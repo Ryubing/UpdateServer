@@ -50,7 +50,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     }
 
     public string FormatReleaseUrlFormat() => $"{_gitlabEndpoint.TrimEnd('/')}/{_cachedProject!.Value.Path}/-/releases/{{0}}";
-    public string FormatReleaseUrl(string tag) => $"{_gitlabEndpoint.TrimEnd('/')}/{_cachedProject!.Value.Path}/-/releases/{tag}";
+    public string FormatReleaseUrl(string tag) => FormatReleaseUrlFormat().Format(tag);
 
     public void Init(ProjectId projectId) => Executor.ExecuteBackgroundAsync(async () =>
     {
