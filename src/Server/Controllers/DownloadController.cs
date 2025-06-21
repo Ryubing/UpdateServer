@@ -21,9 +21,24 @@ public class DownloadController : ControllerBase
         [FromQuery] string version = Constants.RouteName_Latest
         )
     {
+        if (os == string.Empty)
+            return BadRequest("os was empty.");
+        
+        if (arch == string.Empty)
+            return BadRequest("arch was empty.");
+
+        if (rc == string.Empty)
+            return BadRequest("rc was empty.");
+        
+        if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
+            return BadRequest($"Unknown platform '{os}'");
+        
+        if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
+            return BadRequest($"Unknown architecture '{arch}'");
+        
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return BadRequest($"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
-
+        
         var versionCache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
         
         var lck = await versionCache.TakeLockAsync();
@@ -34,12 +49,6 @@ public class DownloadController : ControllerBase
         
         if (release is null)
             return NotFound();
-        
-        if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
-            return BadRequest($"Unknown platform '{os}'");
-        
-        if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
-            return BadRequest($"Unknown architecture '{arch}'");
         
         return Redirect(release.GetUrlFor(supportedPlatform, supportedArch));
     }
@@ -66,10 +75,9 @@ public class DownloadController : ControllerBase
         if (uaString.ContainsIgnoreCase("Mac"))
             return Redirect(latest.Downloads.MacOS);
 
-        DownloadLinks.SupportedPlatform platform = latest.Downloads.Windows;
-        
-        if (uaString.ContainsIgnoreCase("Linux"))
-            platform = latest.Downloads.Linux;
+        var platform = uaString.ContainsIgnoreCase("Linux") 
+            ? latest.Downloads.Linux 
+            : latest.Downloads.Windows;
         
         return Redirect(uaString.ContainsIgnoreCase("x64")
             ? platform.X64
@@ -97,10 +105,9 @@ public class DownloadController : ControllerBase
         if (uaString.ContainsIgnoreCase("Mac"))
             return Redirect(latest.Downloads.MacOS);
 
-        DownloadLinks.SupportedPlatform platform = latest.Downloads.Windows;
-        
-        if (uaString.ContainsIgnoreCase("Linux"))
-            platform = latest.Downloads.Linux;
+        var platform = uaString.ContainsIgnoreCase("Linux") 
+            ? latest.Downloads.Linux 
+            : latest.Downloads.Windows;
         
         return Redirect(uaString.ContainsIgnoreCase("x64")
             ? platform.X64

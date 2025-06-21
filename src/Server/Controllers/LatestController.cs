@@ -19,6 +19,21 @@ public class LatestController : ControllerBase
         [FromQuery] string? rc = Constants.StableRoute
     )
     {
+        if (os == string.Empty)
+            return BadRequest("os was empty.");
+        
+        if (arch == string.Empty)
+            return BadRequest("arch was empty.");
+
+        if (rc == string.Empty)
+            return BadRequest("rc was empty.");
+        
+        if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
+            return BadRequest($"Unknown platform '{os}'");
+
+        if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
+            return BadRequest($"Unknown architecture '{arch}'");
+        
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return BadRequest(
                 $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
@@ -34,18 +49,12 @@ public class LatestController : ControllerBase
         if (latest is null)
             return NotFound();
 
-        if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
-            return BadRequest($"Unknown platform '{os}'");
-
-        if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
-            return BadRequest($"Unknown architecture '{arch}'");
-
         return Ok(new VersionResponse
         {
             Version = latest.Tag,
             ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
             ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag),
-            ReleaseUrlFormat = vcache.FormatReleaseUrlFormat()
+            ReleaseUrlFormat = vcache.ReleaseUrlFormat
         });
     }
 
