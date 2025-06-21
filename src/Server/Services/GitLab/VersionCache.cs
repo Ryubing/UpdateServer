@@ -88,10 +88,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         var releases = await _gl.GetReleasesAsync(_cachedProject.Value.Id);
         
+        _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count, _cachedProject!.Value.Name);
+        
         Clear();
 
         foreach (var release in releases)
         {
+            _logger.LogTrace("Adding version cache entry {tag} for {project}", release.TagName, _cachedProject!.Value.Name);
             this[release.TagName] = new VersionCacheEntry
             {
                 Tag = release.TagName,
@@ -117,6 +120,8 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                 }
             };
         }
+        
+        _logger.LogInformation("Refreshed {entryCount} version cache entries for {project}", Count, _cachedProject!.Value.Name);
 
         _semaphore.Release();
     }
