@@ -1,6 +1,7 @@
 ﻿using Gommon;
 using NGitLab.Models;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server.Controllers.Admin;
 
 namespace Ryujinx.Systems.Update.Server.Services.GitLab;
 
@@ -61,14 +62,21 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             _cachedProject = (project.NameWithNamespace, project.Id, project.PathWithNamespace);
         }
         
+        _logger.LogInformation("Initializing version cache for {project}", _cachedProject!.Value.Name);
+        
         await RefreshAsync();
         
         if (_refreshTimer == null)
         {
-            _logger.LogInformation("Periodic version cache refreshing is disabled for {project}", _cachedProject!.Value.Name);
+            string howToRefresh = RefreshCacheController.Meta.EndpointEnabled
+                ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
+                : "restarting the server. There is an admin-only endpoint available that has not been configured. Set an admin access token in appsettings.json to enable the endpoint.";
+            
+            _logger.LogInformation("Done. Periodic version cache refreshing is disabled for {project}. It can only be refreshed by {means}", _cachedProject!.Value.Name, howToRefresh);
             return;
         }
         
+        _logger.LogInformation("Done. Refreshing version cache for {project} every {timePeriod} minutes.", _cachedProject!.Value.Name, _refreshTimer.Period.TotalMinutes);
         while (await _refreshTimer.WaitForNextTickAsync())
         {
             await RefreshAsync();
