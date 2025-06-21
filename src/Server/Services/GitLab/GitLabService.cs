@@ -54,9 +54,8 @@ public class GitLabService
             await _http.GetAsync($"api/v4/projects/{projectId}/releases/{tagName}"),
             ReleaseSerializerContext.GitLabReleaseJsonResponse
         );
-    
-    public async Task<GitLabReleaseJsonResponse[]> GetReleasesAsync(long projectId) =>
-        (await _http.GetFromJsonAsync(
-            $"api/v4/projects/{projectId}/releases", 
-            ReleaseSerializerContext.GitLabReleaseJsonResponseArray))!;
+
+    public Task<IEnumerable<GitLabReleaseJsonResponse>> GetReleasesAsync(long projectId) =>
+        _http.PaginateAsync($"api/v4/projects/{projectId}/releases?per_page=100&sort=desc&order_by=created_at", 
+            ReleaseSerializerContext.IEnumerableGitLabReleaseJsonResponse)!;
 }

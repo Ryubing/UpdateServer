@@ -41,5 +41,5 @@ public class GitLabReleaseJsonResponse
     }
 }
 
-[JsonSerializable(typeof(GitLabReleaseJsonResponse[]))]
+[JsonSerializable(typeof(IEnumerable<GitLabReleaseJsonResponse>))]
 internal partial class GitLabReleaseJsonResponseSerializerContext : JsonSerializerContext;

@@ -68,7 +68,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         }
     });
 
-    public Task<Extensions.ScopedSemaphoreLock> TakeLockAsync() => _semaphore.TakeAsync();
+    public Task<Gommon.Extensions.ScopedSemaphoreLock> TakeLockAsync() => _semaphore.TakeAsync();
 
     public VersionCacheEntry? Latest => this[_latestTag ?? string.Empty];
 
