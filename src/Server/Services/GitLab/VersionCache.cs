@@ -1,4 +1,5 @@
-﻿using Gommon;
+﻿using System.Diagnostics;
+using Gommon;
 using NGitLab.Models;
 using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Update.Server.Controllers.Admin;
@@ -72,11 +73,11 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                 ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
                 : "restarting the server. There is an admin-only endpoint available that has not been configured. Set an admin access token in appsettings.json to enable the endpoint.";
             
-            _logger.LogInformation("Done. Periodic version cache refreshing is disabled for {project}. It can only be refreshed by {means}", _cachedProject!.Value.Name, howToRefresh);
+            _logger.LogInformation("Periodic version cache refreshing is disabled for {project}. It can only be refreshed by {means}", _cachedProject!.Value.Name, howToRefresh);
             return;
         }
         
-        _logger.LogInformation("Done. Refreshing version cache for {project} every {timePeriod} minutes.", _cachedProject!.Value.Name, _refreshTimer.Period.TotalMinutes);
+        _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.", _cachedProject!.Value.Name, _refreshTimer.Period.TotalMinutes);
         while (await _refreshTimer.WaitForNextTickAsync())
         {
             await RefreshAsync();
@@ -100,10 +101,12 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             _logger.LogWarning("Latest version for {project} was a 404, aborting.", _cachedProject.Value.Name);
             return;
         }
-
-        var releases = await _gl.GetReleasesAsync(_cachedProject.Value.Id);
         
         _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count, _cachedProject!.Value.Name);
+
+        var sw = Stopwatch.StartNew();
+
+        var releases = await _gl.GetReleasesAsync(_cachedProject.Value.Id);
         
         Clear();
 
@@ -136,7 +139,9 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             };
         }
         
-        _logger.LogInformation("Refreshed {entryCount} version cache entries for {project}", Count, _cachedProject!.Value.Name);
+        sw.Stop();
+        
+        _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count, _cachedProject!.Value.Name, sw.ElapsedMilliseconds);
 
         _semaphore.Release();
     }
