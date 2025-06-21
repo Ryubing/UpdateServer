@@ -88,6 +88,14 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public VersionCacheEntry? Latest => this[_latestTag ?? string.Empty];
 
+    public async Task<VersionCacheEntry?> GetReleaseAsync(Func<VersionCache, VersionCacheEntry?> getter)
+    {
+        using (await TakeLockAsync())
+        {
+            return getter(this);
+        }
+    }
+
     public async Task RefreshAsync()
     {
         await _semaphore.WaitAsync();

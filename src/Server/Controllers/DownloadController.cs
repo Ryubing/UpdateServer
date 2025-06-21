@@ -1,7 +1,6 @@
 using Gommon;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Update.Server;
 using Ryujinx.Systems.Update.Server.Services.GitLab;
 
 namespace Ryujinx.Systems.Update.Server.Controllers;
@@ -14,7 +13,7 @@ public class DownloadController : ControllerBase
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<object>> DownloadLatestCustom(
+    public async Task<ActionResult<object>> DownloadCustom(
         [FromQuery] string os,
         [FromQuery] string arch,
         [FromQuery] string rc = Constants.StableRoute,
@@ -39,13 +38,11 @@ public class DownloadController : ControllerBase
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return BadRequest($"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
         
-        var versionCache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
-        
-        var lck = await versionCache.TakeLockAsync();
-
-        var release = version is Constants.RouteName_Latest ? versionCache.Latest : versionCache[version];
-        
-        lck.Dispose();
+        var release = await HttpContext.RequestServices
+            .GetCacheFor(releaseChannel)
+            .GetReleaseAsync(c => 
+                version is Constants.RouteName_Latest ? c.Latest : c[version]
+            );
         
         if (release is null)
             return NotFound();
@@ -61,11 +58,7 @@ public class DownloadController : ControllerBase
         [FromKeyedServices("stableCache")] VersionCache vcache
     )
     {
-        var lck = await vcache.TakeLockAsync();
-        
-        var latest = vcache.Latest;
-        
-        lck.Dispose();
+        var latest = await vcache.GetReleaseAsync(c => c.Latest);
 
         if (latest is null)
             return NotFound();
@@ -91,11 +84,7 @@ public class DownloadController : ControllerBase
         [FromKeyedServices("canaryCache")] VersionCache vcache
     )
     {
-        var lck = await vcache.TakeLockAsync();
-        
-        var latest = vcache.Latest;
-        
-        lck.Dispose();
+        var latest = await vcache.GetReleaseAsync(c => c.Latest);
 
         if (latest is null)
             return NotFound();

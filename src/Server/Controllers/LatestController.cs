@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Update.Server;
 using Ryujinx.Systems.Update.Server.Services.GitLab;
 
 namespace Ryujinx.Systems.Update.Server.Controllers;
@@ -40,11 +39,7 @@ public class LatestController : ControllerBase
 
         var vcache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
 
-        var lck = await vcache.TakeLockAsync();
-
-        var latest = vcache.Latest;
-
-        lck.Dispose();
+        var latest = await vcache.GetReleaseAsync(c => c.Latest);
 
         if (latest is null)
             return NotFound();
@@ -64,11 +59,7 @@ public class LatestController : ControllerBase
     public async Task<ActionResult> RedirectLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache)
     {
-        var lck = await vcache.TakeLockAsync();
-
-        var latest = vcache.Latest;
-
-        lck.Dispose();
+        var latest = await vcache.GetReleaseAsync(c => c.Latest);
 
         return latest is not null
             ? Redirect(latest.ReleaseUrl)
@@ -81,11 +72,7 @@ public class LatestController : ControllerBase
     public async Task<ActionResult> RedirectLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache)
     {
-        var lck = await vcache.TakeLockAsync();
-
-        var latest = vcache.Latest;
-
-        lck.Dispose();
+        var latest = await vcache.GetReleaseAsync(c => c.Latest);
 
         return latest is not null
             ? Redirect(latest.ReleaseUrl)

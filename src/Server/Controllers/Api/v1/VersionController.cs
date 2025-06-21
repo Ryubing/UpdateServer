@@ -18,11 +18,7 @@ public class VersionController : ControllerBase
         [FromQuery] string? arch = null
         )
     {
-        var lck = await vcache.TakeLockAsync();
-        
-        var latest = vcache.Latest;
-        
-        lck.Dispose();
+        var latest = await vcache.GetReleaseAsync(c => c.Latest);
         
         if (latest is null)
             return NotFound();
@@ -52,11 +48,7 @@ public class VersionController : ControllerBase
         [FromQuery] string? arch = null
     )
     {
-        var lck = await vcache.TakeLockAsync();
-        
-        var latest = vcache.Latest;
-        
-        lck.Dispose();
+        var latest = await vcache.GetReleaseAsync(c => c.Latest);
 
         if (latest is null)
             return NotFound();
@@ -85,11 +77,8 @@ public class VersionController : ControllerBase
         string version
     )
     {
-        using (var _ = await vcache.TakeLockAsync())
-        {
-            if (vcache[version] is { } cacheEntry)
-                return Ok(cacheEntry);
-        }
+        if (await vcache.GetReleaseAsync(c => c[version]) is { } cacheEntry)
+            return Ok(cacheEntry);
         
         return NotFound();
     }
@@ -103,11 +92,8 @@ public class VersionController : ControllerBase
         string version
     )
     {
-        using (var _ = await vcache.TakeLockAsync())
-        {
-            if (vcache[version] is { } cacheEntry)
-                return Ok(cacheEntry);
-        }
+        if (await vcache.GetReleaseAsync(c => c[version]) is { } cacheEntry)
+            return Ok(cacheEntry);
         
         return NotFound();
     }
