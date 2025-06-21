@@ -43,7 +43,7 @@ public class RefreshCacheController : ControllerBase
 
         var vcache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
 
-        await vcache.Update();
+        await vcache.RefreshAsync();
         
         LastRefreshes[releaseChannel] = DateTimeOffset.Now;
 

@@ -61,10 +61,17 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             _cachedProject = (project.NameWithNamespace, project.Id, project.PathWithNamespace);
         }
         
-        await Update();
-        while (_refreshTimer != null && await _refreshTimer.WaitForNextTickAsync())
+        await RefreshAsync();
+        
+        if (_refreshTimer == null)
         {
-            await Update();
+            _logger.LogInformation("Periodic version cache refreshing is disabled for {project}", _cachedProject!.Value.Name);
+            return;
+        }
+        
+        while (await _refreshTimer.WaitForNextTickAsync())
+        {
+            await RefreshAsync();
         }
     });
 
@@ -72,7 +79,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public VersionCacheEntry? Latest => this[_latestTag ?? string.Empty];
 
-    public async Task Update()
+    public async Task RefreshAsync()
     {
         await _semaphore.WaitAsync();
         
