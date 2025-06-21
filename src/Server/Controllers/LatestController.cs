@@ -12,7 +12,7 @@ public class LatestController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<object>> GetLatestCustom(
+    public async Task<ActionResult<VersionResponse>> GetLatestCustom(
         [FromQuery] string? os,
         [FromQuery] string? arch,
         [FromQuery] string? rc = Constants.StableRoute

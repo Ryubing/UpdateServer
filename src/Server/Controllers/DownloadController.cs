@@ -13,7 +13,7 @@ public class DownloadController : ControllerBase
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<object>> DownloadCustom(
+    public async Task<ActionResult> DownloadCustom(
         [FromQuery] string os,
         [FromQuery] string arch,
         [FromQuery] string rc = Constants.StableRoute,
@@ -54,7 +54,7 @@ public class DownloadController : ControllerBase
     [HttpGet(Constants.StableRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<object>> DownloadLatestStable(
+    public async Task<ActionResult> DownloadLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache
     )
     {
@@ -80,7 +80,7 @@ public class DownloadController : ControllerBase
     [HttpGet(Constants.CanaryRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<object>> DownloadLatestCanary(
+    public async Task<ActionResult> DownloadLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache
     )
     {

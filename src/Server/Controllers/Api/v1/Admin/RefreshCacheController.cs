@@ -25,7 +25,7 @@ public class RefreshCacheController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [SuppressMessage("ReSharper.DPA", "DPA0011: High execution time of MVC action")]
-    public async Task<ActionResult<object>> Action([FromQuery] string rc)
+    public async Task<ActionResult> Action([FromQuery] string rc)
     {
         if (!Meta.EndpointEnabled)
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
