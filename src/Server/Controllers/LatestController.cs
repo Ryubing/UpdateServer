@@ -46,7 +46,6 @@ public class LatestController : ControllerBase
         {
             Version = latest.Tag,
             ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
-            ReleaseUrl = vcache.FormatReleaseUrl(latest.Tag),
             ReleaseUrlFormat = vcache.ReleaseUrlFormat
         });
     }

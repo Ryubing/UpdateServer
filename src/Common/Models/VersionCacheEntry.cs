@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using Ryujinx.Systems.Update.Common;
 
 namespace Ryujinx.Systems.Update.Common;
 

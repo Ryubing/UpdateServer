@@ -11,9 +11,8 @@ public class VersionResponse
     
     [JsonPropertyName("download_url")]
     public required string ArtifactUrl { get; set; }
-    
-    [JsonPropertyName("web_url")]
-    public required string ReleaseUrl { get; set; }
+
+    [JsonPropertyName("web_url")] public string ReleaseUrl  => string.Format(ReleaseUrlFormat, Version);
     
     [JsonPropertyName("web_url_format")]
     public required string ReleaseUrlFormat { get; set; }
