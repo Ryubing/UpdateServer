@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using Gommon;
+using NGitLab;
 using NGitLab.Models;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Update.Server.Controllers.Admin;
 
 namespace Ryujinx.Systems.Update.Server.Services.GitLab;
 
@@ -56,11 +56,19 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public void Init(ProjectId projectId) => Executor.ExecuteBackgroundAsync(async () =>
     {
-        if (!_cachedProject.HasValue)
+        try
         {
-            var project = await _gl.Client.Projects.GetAsync(projectId);
+            if (!_cachedProject.HasValue)
+            {
+                var project = await _gl.Client.Projects.GetAsync(projectId);
 
-            _cachedProject = (project.NameWithNamespace, project.Id, project.PathWithNamespace);
+                _cachedProject = (project.NameWithNamespace, project.Id, project.PathWithNamespace);
+            }
+        }
+        catch (GitLabException e)
+        {
+            _logger.LogError("Encountered error when getting the project ({project}) for the version cache. Aborting. Error: {errorMessage}", projectId.ValueAsString(), e.ErrorMessage);
+            return;
         }
         
         _logger.LogInformation("Initializing version cache for {project}", _cachedProject!.Value.Name);
