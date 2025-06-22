@@ -1,6 +1,6 @@
 ﻿using Gommon;
 
-namespace Ryujinx.Systems.Update.Server.Controllers.Admin;
+namespace Ryujinx.Systems.Update.Server;
 
 internal static class AdminEndpointMetadata
 {

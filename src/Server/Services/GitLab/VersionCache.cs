@@ -153,4 +153,21 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         _semaphore.Release();
     }
+
+    public static void InitializeVersionCaches(WebApplication app)
+    {
+        var versionCacheSection = app.Configuration.GetSection("GitLab").GetRequiredSection("VersionCacheSources");
+
+        var stableSource = versionCacheSection.GetValue<string>("Stable");
+
+        if (stableSource is null)
+            throw new Exception("Cannot start the server without a GitLab repository in GitLab:VersionCacheSources:Stable");
+
+        app.Services.GetRequiredKeyedService<VersionCache>("stableCache").Init(new ProjectId(stableSource));
+
+        var canarySource = versionCacheSection.GetValue<string>("Canary");
+
+        if (canarySource != null)
+            app.Services.GetRequiredKeyedService<VersionCache>("canaryCache").Init(new ProjectId(canarySource));
+    }
 }
