@@ -18,9 +18,7 @@ public class VersionController : ControllerBase
         [FromQuery] string? arch = null
         )
     {
-        var latest = await vcache.GetReleaseAsync(c => c.Latest);
-        
-        if (latest is null)
+        if (await vcache.GetReleaseAsync(c => c.Latest) is not {} latest)
             return NotFound();
         
         if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
