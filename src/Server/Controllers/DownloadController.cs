@@ -58,9 +58,7 @@ public class DownloadController : ControllerBase
         [FromKeyedServices("stableCache")] VersionCache vcache
     )
     {
-        var latest = await vcache.GetReleaseAsync(c => c.Latest);
-
-        if (latest is null)
+        if (await vcache.GetReleaseAsync(c => c.Latest) is not {} latest)
             return NotFound();
         
         var uaString = HttpContext.Request.Headers.UserAgent.ToString();
@@ -84,9 +82,7 @@ public class DownloadController : ControllerBase
         [FromKeyedServices("canaryCache")] VersionCache vcache
     )
     {
-        var latest = await vcache.GetReleaseAsync(c => c.Latest);
-
-        if (latest is null)
+        if (await vcache.GetReleaseAsync(c => c.Latest) is not {} latest)
             return NotFound();
         
         var uaString = HttpContext.Request.Headers.UserAgent.ToString();

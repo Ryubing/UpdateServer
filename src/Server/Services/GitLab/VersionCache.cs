@@ -69,11 +69,11 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         
         if (_refreshTimer == null)
         {
-            string howToRefresh = RefreshCacheController.Meta.EndpointEnabled
+            string howToRefresh = AdminEndpointMetadata.Enabled
                 ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
                 : "restarting the server. There is an admin-only endpoint available that has not been configured. Set an admin access token in appsettings.json to enable the endpoint.";
             
-            _logger.LogInformation("Periodic version cache refreshing is disabled for {project}. It can only be refreshed by {means}", _cachedProject!.Value.Name, howToRefresh);
+            _logger.LogInformation("Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}", _cachedProject!.Value.Name, howToRefresh);
             return;
         }
         

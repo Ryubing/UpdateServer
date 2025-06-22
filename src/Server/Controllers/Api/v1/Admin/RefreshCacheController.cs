@@ -1,8 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Gommon;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Update.Server;
-using Ryujinx.Systems.Update.Server.Services.GitLab;
 
 namespace Ryujinx.Systems.Update.Server.Controllers.Admin;
 
@@ -10,8 +9,6 @@ namespace Ryujinx.Systems.Update.Server.Controllers.Admin;
 [ApiController]
 public class RefreshCacheController : ControllerBase
 {
-    internal static (bool EndpointEnabled, string AccessToken) Meta = (false, "");
-    
     private static readonly Dictionary<ReleaseChannel, DateTimeOffset> LastRefreshes =
         new()
         {
@@ -27,23 +24,22 @@ public class RefreshCacheController : ControllerBase
     [SuppressMessage("ReSharper.DPA", "DPA0011: High execution time of MVC action")]
     public async Task<ActionResult> Action([FromQuery] string rc)
     {
-        if (!Meta.EndpointEnabled)
+        if (!AdminEndpointMetadata.Enabled)
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
                 statusCode: 418);
 
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
-            return Problem("Unknown rc", statusCode: 404);
+            return Problem(
+                $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'", statusCode: 404);
 
-        if (!Meta.AccessToken.Equals(HttpContext.Request.Headers.Authorization.ToString(), StringComparison.Ordinal))
+        if (!AdminEndpointMetadata.AccessToken.EqualsIgnoreCase(HttpContext.Request.Headers.Authorization))
             return Unauthorized();
         
         var minutesSinceLastRefresh = (DateTimeOffset.Now - LastRefreshes[releaseChannel]).TotalMinutes;
         if (minutesSinceLastRefresh <= 1)
             return Problem("Try again later.", statusCode: 429);
 
-        var vcache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
-
-        await vcache.RefreshAsync();
+        await HttpContext.RequestServices.GetCacheFor(releaseChannel).RefreshAsync();
         
         LastRefreshes[releaseChannel] = DateTimeOffset.Now;
 

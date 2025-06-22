@@ -38,10 +38,8 @@ public class LatestController : ControllerBase
                 $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
 
         var vcache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
-
-        var latest = await vcache.GetReleaseAsync(c => c.Latest);
-
-        if (latest is null)
+        
+        if (await vcache.GetReleaseAsync(c => c.Latest) is not { } latest)
             return NotFound();
 
         return Ok(new VersionResponse
@@ -59,11 +57,10 @@ public class LatestController : ControllerBase
     public async Task<ActionResult> RedirectLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache)
     {
-        var latest = await vcache.GetReleaseAsync(c => c.Latest);
+        if (await vcache.GetReleaseAsync(c => c.Latest) is { } latest)
+            return Redirect(latest.ReleaseUrl);
 
-        return latest is not null
-            ? Redirect(latest.ReleaseUrl)
-            : NotFound();
+        return NotFound();
     }
 
     [HttpGet(Constants.CanaryRoute)]
@@ -72,10 +69,9 @@ public class LatestController : ControllerBase
     public async Task<ActionResult> RedirectLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache)
     {
-        var latest = await vcache.GetReleaseAsync(c => c.Latest);
+        if (await vcache.GetReleaseAsync(c => c.Latest) is { } latest)
+            return Redirect(latest.ReleaseUrl);
 
-        return latest is not null
-            ? Redirect(latest.ReleaseUrl)
-            : NotFound();
+        return NotFound();
     }
 }

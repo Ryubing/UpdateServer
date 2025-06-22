@@ -114,7 +114,7 @@ TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
 #pragma warning restore CA2254
 
 var adminSec = app.Configuration.GetSection("Admin");
-if (adminSec.Exists() && adminSec.GetValue<string>("AccessToken") is { } accessToken and not "")
-    RefreshCacheController.Meta = (true, accessToken);
+if (adminSec.Exists())
+    AdminEndpointMetadata.Set(adminSec.GetValue<string>("AccessToken"));
 
 app.Run();
