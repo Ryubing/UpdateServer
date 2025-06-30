@@ -1,5 +1,6 @@
 using Ryujinx.Systems.Update.Server;
 using Ryujinx.Systems.Update.Server.Helpers;
+using Ryujinx.Systems.Update.Server.Services;
 using Ryujinx.Systems.Update.Server.Services.GitLab;
 
 CommandLineState.Init(args);
@@ -12,6 +13,7 @@ if (CommandLineState.ListenPort != null)
 if (CommandLineState.UseHttpLogging)
     builder.Services.AddHttpLogging();
 
+builder.Services.AddSingleton<DefaultHttpClientProxy>();
 builder.Services.AddSingleton<GitLabService>();
 builder.Services.AddKeyedSingleton<VersionCache>("stableCache");
 builder.Services.AddKeyedSingleton<VersionCache>("canaryCache");

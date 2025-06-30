@@ -13,7 +13,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     private readonly PeriodicTimer? _refreshTimer;
 
     private (string Name, long Id, string Path)? _cachedProject;
-    
+
     private string? _latestTag;
 
     private readonly string _gitlabEndpoint;
@@ -26,7 +26,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         _logger = logger;
 
         _gitlabEndpoint = config["GitLab:Endpoint"]!;
-        
+
         if (config["GitLab:RefreshIntervalMinutes"] is not { } refreshIntervalStr)
         {
             _refreshTimer = new(TimeSpan.FromMinutes(5));
@@ -37,11 +37,12 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         {
             if (minutes < 0)
             {
-                logger.LogInformation("Config value 'GitLab:RefreshIntervalSeconds' is a negative value. Disabling auto cache refreshes.");
+                logger.LogInformation(
+                    "Config value 'GitLab:RefreshIntervalSeconds' is a negative value. Disabling auto cache refreshes.");
                 _refreshTimer = null;
             }
             else
-                _refreshTimer = new (TimeSpan.FromMinutes(minutes));
+                _refreshTimer = new(TimeSpan.FromMinutes(minutes));
         }
         else
         {
@@ -66,25 +67,30 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         }
         catch (GitLabException e)
         {
-            _logger.LogError("Encountered error when getting the project ({project}) for the version cache. Aborting. Error: {errorMessage}", projectId.ValueAsString(), e.ErrorMessage);
+            _logger.LogError(
+                "Encountered error when getting the project ({project}) for the version cache. Aborting. Error: {errorMessage}",
+                projectId.ValueAsString(), e.ErrorMessage);
             return;
         }
-        
+
         _logger.LogInformation("Initializing version cache for {project}", _cachedProject!.Value.Name);
-        
+
         await RefreshAsync();
-        
+
         if (_refreshTimer == null)
         {
             string howToRefresh = AdminEndpointMetadata.Enabled
                 ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
                 : "restarting the server. There is an admin-only endpoint available that has not been configured. Set an admin access token in appsettings.json to enable the endpoint.";
-            
-            _logger.LogInformation("Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}", _cachedProject!.Value.Name, howToRefresh);
+
+            _logger.LogInformation(
+                "Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}",
+                _cachedProject!.Value.Name, howToRefresh);
             return;
         }
-        
-        _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.", _cachedProject!.Value.Name, _refreshTimer.Period.TotalMinutes);
+
+        _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
+            _cachedProject!.Value.Name, _refreshTimer.Period.TotalMinutes);
         while (await _refreshTimer.WaitForNextTickAsync())
         {
             await RefreshAsync();
@@ -106,9 +112,9 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     public async Task RefreshAsync()
     {
         await _semaphore.WaitAsync();
-        
+
         _logger.LogInformation("Reloading version cache for {project}", _cachedProject!.Value.Name);
-        
+
         _latestTag = (await _gl.GetLatestReleaseAsync(_cachedProject.Value.Id))?.TagName;
 
         if (_latestTag is null)
@@ -116,13 +122,22 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             _logger.LogWarning("Latest version for {project} was a 404, aborting.", _cachedProject.Value.Name);
             return;
         }
-        
-        _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count, _cachedProject!.Value.Name);
+
+        _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count,
+            _cachedProject!.Value.Name);
 
         var sw = Stopwatch.StartNew();
 
-        var releases = await _gl.GetReleasesAsync(_cachedProject.Value.Id);
-        
+        var releases = await _gl.GetReleasesAsync(_cachedProject.Value.Id)
+            .GetAllAsync(onNonSuccess:
+                code => _logger.LogError(
+                    "One of the pagination requests to get all releases returned a non-success status code: {code}",
+                    Enum.GetName(code) ?? $"{(int)code}")
+            );
+
+        if (releases == null)
+            goto ReleaseLock;
+
         Clear();
 
         foreach (var release in releases)
@@ -153,11 +168,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                 }
             };
         }
-        
-        sw.Stop();
-        
-        _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count, _cachedProject!.Value.Name, sw.ElapsedMilliseconds);
 
+        sw.Stop();
+
+        _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
+            _cachedProject!.Value.Name, sw.ElapsedMilliseconds);
+
+    ReleaseLock:
         _semaphore.Release();
     }
 
@@ -168,7 +185,8 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         var stableSource = versionCacheSection.GetValue<string>("Stable");
 
         if (stableSource is null)
-            throw new Exception("Cannot start the server without a GitLab repository in GitLab:VersionCacheSources:Stable");
+            throw new Exception(
+                "Cannot start the server without a GitLab repository in GitLab:VersionCacheSources:Stable");
 
         app.Services.GetRequiredKeyedService<VersionCache>("stableCache").Init(new ProjectId(stableSource));
 

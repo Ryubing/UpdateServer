@@ -1,8 +1,8 @@
-﻿using System.Configuration;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using NGitLab;
+using Ryujinx.Systems.Update.Server.Helpers.Http;
 
 namespace Ryujinx.Systems.Update.Server.Services.GitLab;
 
@@ -11,12 +11,12 @@ public class GitLabService
     private static readonly GitLabReleaseJsonResponseSerializerContext ReleaseSerializerContext =
         new();
     
-    private readonly HttpClient _http;
+    private readonly IHttpClientProxy _http;
     public GitLabClient Client { get; }
 
     private readonly ILogger<GitLabService> _logger;
 
-    public GitLabService(IConfiguration config, ILogger<GitLabService> logger)
+    public GitLabService(IConfiguration config, ILogger<GitLabService> logger, DefaultHttpClientProxy httpClient)
     {
         _logger = logger;
         
@@ -29,11 +29,7 @@ public class GitLabService
         var accessToken = gitlabSection.GetValue<string>("AccessToken");
         
         Client = new GitLabClient(host, accessToken);
-        _http = new HttpClient
-        {
-            BaseAddress = new Uri(host),
-            DefaultRequestHeaders = { Authorization = AuthenticationHeaderValue.Parse($"Bearer {accessToken}") }
-        };
+        _http = httpClient;
     }
 
     private async ValueTask<T?> HandleNotFoundAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> typeInfo)
@@ -55,7 +51,9 @@ public class GitLabService
             ReleaseSerializerContext.GitLabReleaseJsonResponse
         );
 
-    public Task<IEnumerable<GitLabReleaseJsonResponse>> GetReleasesAsync(long projectId) =>
-        _http.PaginateAsync($"api/v4/projects/{projectId}/releases?per_page=100&sort=desc&order_by=created_at", 
-            ReleaseSerializerContext.IEnumerableGitLabReleaseJsonResponse)!;
+    public PaginatedEndpoint<GitLabReleaseJsonResponse> GetReleasesAsync(long projectId)
+        => PaginatedEndpoint<GitLabReleaseJsonResponse>.Builder(_http)
+            .WithBaseUrl($"api/v4/projects/{projectId}/releases")
+            .WithJsonContentParser(ReleaseSerializerContext.IEnumerableGitLabReleaseJsonResponse)
+            .WithQueryStringParameters(QueryParams.Sort("desc"), QueryParams.OrderBy("created_at"));
 }
