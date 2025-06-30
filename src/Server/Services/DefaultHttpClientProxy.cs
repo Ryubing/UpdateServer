@@ -29,10 +29,10 @@ public class DefaultHttpClientProxy : IHttpClientProxy, IDisposable
             DefaultRequestHeaders = { Authorization = AuthenticationHeaderValue.Parse($"Bearer {accessToken}") }
         };
         
-        _callback = (format, formatArgs, _) =>
+        _callback = (format, formatArgs, caller) =>
         {
 #pragma warning disable CA2254
-            logger.LogInformation(format, formatArgs);
+            logger.LogInformation(new EventId(1, caller), format, formatArgs);
 #pragma warning restore CA2254
         };
     }
@@ -43,8 +43,9 @@ public class DefaultHttpClientProxy : IHttpClientProxy, IDisposable
         _callback = logCallback;
     }
 
+    /// <inheritdoc />
     [SuppressMessage("ReSharper", "RedundantAssignment", Justification = "ReSharper cannot comprehend the idea of checking all combinations of 2 objects potentially being null.")]
-    public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption? option = null, CancellationToken? token = null)
+    public async Task<HttpResponseMessage> SendAsync(string actualCaller, HttpRequestMessage request, HttpCompletionOption? option = null, CancellationToken? token = null)
     {
         HttpResponseMessage response;
         
@@ -61,7 +62,7 @@ public class DefaultHttpClientProxy : IHttpClientProxy, IDisposable
         
         sw.Stop();
         
-        Log("{method} {uri} -> {statusCode} in {elapsed}ms", GetLogArgs(request, response, sw));
+        Log("{method} {uri} -> {statusCode} in {elapsed}ms", GetLogArgs(request, response, sw), actualCaller);
 
         return response;
     }

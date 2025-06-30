@@ -5,7 +5,19 @@ namespace Ryujinx.Systems.Update.Server.Helpers.Http;
 
 public interface IHttpClientProxy
 {
-    public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption? option = null, CancellationToken? token = null);
+    /// <summary>
+    /// </summary>
+    /// <param name="actualCaller"></param>
+    /// <param name="request"></param>
+    /// <param name="option"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    /// <remarks>Do no call. Use an overload.</remarks>
+    protected Task<HttpResponseMessage> SendAsync(string actualCaller, HttpRequestMessage request, HttpCompletionOption? option = null, CancellationToken? token = null);
+
+    public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption? option = null,
+        CancellationToken? token = null)
+        => SendAsync(nameof(SendAsync), request, option, token);
 
     #region Convenience overloads for SendAsync
 
@@ -48,31 +60,31 @@ public interface IHttpClientProxy
     public Task<HttpResponseMessage> GetAsync(
         Uri requestUri,
         HttpCompletionOption? option = null, CancellationToken? token = null
-    ) => SendAsync(CreateRequestMessage(HttpMethod.Get, requestUri), option, token);
+    ) => SendAsync(nameof(GetAsync), CreateRequestMessage(HttpMethod.Get, requestUri), option, token);
     
     public Task<HttpResponseMessage> PostAsync(
         Uri requestUri,
         HttpContent? content = null,
         HttpCompletionOption? option = null, CancellationToken? token = null
-    ) => SendAsync(CreateRequestMessageWithContent(HttpMethod.Post, requestUri, content), option, token);
+    ) => SendAsync(nameof(PostAsync), CreateRequestMessageWithContent(HttpMethod.Post, requestUri, content), option, token);
 
     public Task<HttpResponseMessage> PutAsync(
         Uri requestUri,
         HttpContent? content = null,
         HttpCompletionOption? option = null, CancellationToken? token = null
-    ) => SendAsync(CreateRequestMessageWithContent(HttpMethod.Put, requestUri, content), option, token);
+    ) => SendAsync(nameof(PutAsync), CreateRequestMessageWithContent(HttpMethod.Put, requestUri, content), option, token);
 
     public Task<HttpResponseMessage> PatchAsync(
         Uri requestUri,
         HttpContent? content = null,
         HttpCompletionOption? option = null, CancellationToken? token = null
-    ) => SendAsync(CreateRequestMessageWithContent(HttpMethod.Patch, requestUri, content), option, token);
+    ) => SendAsync(nameof(PatchAsync), CreateRequestMessageWithContent(HttpMethod.Patch, requestUri, content), option, token);
     
     public Task<HttpResponseMessage> DeleteAsync(
         Uri requestUri,
         HttpContent? content = null,
         HttpCompletionOption? option = null, CancellationToken? token = null
-    ) => SendAsync(CreateRequestMessageWithContent(HttpMethod.Delete, requestUri, content), option, token);
+    ) => SendAsync(nameof(DeleteAsync), CreateRequestMessageWithContent(HttpMethod.Delete, requestUri, content), option, token);
 
     #endregion
 
