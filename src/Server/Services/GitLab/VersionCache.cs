@@ -111,8 +111,6 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public async Task RefreshAsync()
     {
-        await _semaphore.WaitAsync();
-        
         _logger.LogInformation("Reloading version cache for {project}", _cachedProject!.Value.Name);
 
         _latestTag = (await _gl.GetLatestReleaseAsync(_cachedProject.Value.Id))?.TagName;
@@ -134,6 +132,8 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         if (releases is null)
             goto ReleaseLock;
+        
+        await _semaphore.WaitAsync();
         
         if (Count > 0)
         {
