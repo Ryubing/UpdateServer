@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Ryujinx.Systems.Update.Server;
 using Ryujinx.Systems.Update.Server.Helpers;
 using Ryujinx.Systems.Update.Server.Services;
@@ -13,6 +14,11 @@ if (CommandLineState.ListenPort != null)
 if (CommandLineState.UseHttpLogging)
     builder.Services.AddHttpLogging();
 
+builder.Services.Configure<ForwardedHeadersOptions>(opts =>
+{
+    opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
+
 builder.Services.AddSingleton<DefaultHttpClientProxy>();
 builder.Services.AddSingleton<GitLabService>();
 builder.Services.AddKeyedSingleton<VersionCache>("stableCache");
@@ -23,6 +29,8 @@ Swagger.TrySetup(builder);
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 Swagger.TryMapUi(app);
 
