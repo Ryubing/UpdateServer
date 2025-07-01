@@ -81,7 +81,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         {
             string howToRefresh = AdminEndpointMetadata.Enabled
                 ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
-                : "restarting the server. There is an admin-only endpoint available that has not been configured. Set an admin access token in appsettings.json to enable the endpoint.";
+                : "restarting the server. Set an admin access token in appsettings.json to enable an endpoint to do this.";
 
             _logger.LogInformation(
                 "Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}",
@@ -112,7 +112,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     public async Task RefreshAsync()
     {
         await _semaphore.WaitAsync();
-
+        
         _logger.LogInformation("Reloading version cache for {project}", _cachedProject!.Value.Name);
 
         _latestTag = (await _gl.GetLatestReleaseAsync(_cachedProject.Value.Id))?.TagName;
@@ -123,9 +123,6 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             return;
         }
 
-        _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count,
-            _cachedProject!.Value.Name);
-
         var sw = Stopwatch.StartNew();
 
         var releases = await _gl.PageReleases(_cachedProject.Value.Id)
@@ -135,10 +132,15 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                     Enum.GetName(code) ?? $"{(int)code}")
             );
 
-        if (releases == null)
+        if (releases is null)
             goto ReleaseLock;
-
-        Clear();
+        
+        if (Count > 0)
+        {
+            _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count,
+                _cachedProject!.Value.Name);
+            Clear();
+        }
 
         foreach (var release in releases)
         {
