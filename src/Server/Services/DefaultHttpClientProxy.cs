@@ -58,7 +58,6 @@ public class DefaultHttpClientProxy : IHttpClientProxy, IDisposable
 
         sw.Stop();
 
-
         _logger?.LogInformation(
             new EventId(1, actualCaller),
             "{method} {uri} -> {statusCode} in {elapsed}ms",
