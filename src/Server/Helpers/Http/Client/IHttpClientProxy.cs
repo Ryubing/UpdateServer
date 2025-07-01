@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using Gommon;
 
 namespace Ryujinx.Systems.Update.Server.Helpers.Http;
 
@@ -14,10 +15,13 @@ public interface IHttpClientProxy
     /// <returns></returns>
     /// <remarks>Do no call. Use an overload.</remarks>
     protected Task<HttpResponseMessage> SendAsync(string actualCaller, HttpRequestMessage request, HttpCompletionOption? option = null, CancellationToken? token = null);
-
+    
     public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption? option = null,
         CancellationToken? token = null)
         => SendAsync(nameof(SendAsync), request, option, token);
+    
+    public PaginatedEndpoint<T> Paginate<T>(Func<PaginatedEndpoint<T>.BuilderApi, PaginatedEndpoint<T>.BuilderApi> builder) 
+        => PaginatedEndpoint<T>.Builder(this).Into(builder);
 
     #region Convenience overloads for SendAsync
 

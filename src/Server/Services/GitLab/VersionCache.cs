@@ -128,7 +128,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         var sw = Stopwatch.StartNew();
 
-        var releases = await _gl.GetReleasesAsync(_cachedProject.Value.Id)
+        var releases = await _gl.PageReleases(_cachedProject.Value.Id)
             .GetAllAsync(onNonSuccess:
                 code => _logger.LogError(
                     "One of the pagination requests to get all releases returned a non-success status code: {code}",

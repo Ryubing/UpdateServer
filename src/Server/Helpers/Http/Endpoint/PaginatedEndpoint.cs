@@ -34,7 +34,7 @@ public partial class PaginatedEndpoint<T>
         if (returned.TryGetFirst(predicate, out var matched))
             return matched;
         
-        if (!response.Headers.GetValues("x-total-pages").ToString().TryParse<int>(out var pageCount) || pageCount > 1)
+        if ((response.Headers.GetValues("x-total-pages").FirstOrDefault()?.TryParse<int>(out var pageCount) ?? false) && pageCount > 1)
         {
             currentPage++;
             do
@@ -74,7 +74,7 @@ public partial class PaginatedEndpoint<T>
         if (returned.Length > 0)
             return returned[0];
         
-        if (!response.Headers.GetValues("x-total-pages").ToString().TryParse<int>(out var pageCount) || pageCount > 1)
+        if ((response.Headers.GetValues("x-total-pages").FirstOrDefault()?.TryParse<int>(out var pageCount) ?? false) && pageCount > 1)
         {
             currentPage++;
             do
@@ -112,7 +112,7 @@ public partial class PaginatedEndpoint<T>
 
         IEnumerable<T> accumulated = await _parsePage(response.Content);
 
-        if (!response.Headers.GetValues("x-total-pages").ToString().TryParse<int>(out var pageCount) || pageCount > 1)
+        if ((response.Headers.GetValues("x-total-pages").FirstOrDefault()?.TryParse<int>(out var pageCount) ?? false) && pageCount > 1)
         {
             currentPage++;
             do
@@ -147,8 +147,8 @@ public partial class PaginatedEndpoint<T>
         }
 
         IEnumerable<T> accumulated = await _parsePage(response.Content);
-
-        if (!response.Headers.GetValues("x-total-pages").ToString().TryParse<int>(out var pageCount) || pageCount > 1)
+        
+        if ((response.Headers.GetValues("x-total-pages").FirstOrDefault()?.TryParse<int>(out var pageCount) ?? false) && pageCount > 1)
         {
             currentPage++;
             do

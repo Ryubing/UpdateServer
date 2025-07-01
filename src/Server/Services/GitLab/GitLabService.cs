@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Headers;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using NGitLab;
 using Ryujinx.Systems.Update.Server.Helpers.Http;
@@ -10,7 +9,7 @@ public class GitLabService
 {
     private static readonly GitLabReleaseJsonResponseSerializerContext ReleaseSerializerContext =
         new();
-    
+
     private readonly IHttpClientProxy _http;
     public GitLabClient Client { get; }
 
@@ -19,15 +18,16 @@ public class GitLabService
     public GitLabService(IConfiguration config, ILogger<GitLabService> logger, DefaultHttpClientProxy httpClient)
     {
         _logger = logger;
-        
+
         var gitlabSection = config.GetSection("GitLab");
-        
+
         if (!gitlabSection.Exists())
-            throw new Exception($"The '{gitlabSection.Key}' section does not exist in your appsettings.json. You need to provide an 'Endpoint', 'AccessToken', and optionally 'RefreshIntervalMinutes' values.");
+            throw new Exception(
+                $"The '{gitlabSection.Key}' section does not exist in your appsettings.json. You need to provide an 'Endpoint', 'AccessToken', and optionally 'RefreshIntervalMinutes' values.");
 
         var host = gitlabSection.GetValue<string>("Endpoint")!.TrimEnd('/');
         var accessToken = gitlabSection.GetValue<string>("AccessToken");
-        
+
         Client = new GitLabClient(host, accessToken);
         _http = httpClient;
     }
@@ -41,8 +41,8 @@ public class GitLabService
 
         return JsonSerializer.Deserialize(contentString, typeInfo);
     }
-    
-    public Task<GitLabReleaseJsonResponse?> GetLatestReleaseAsync(long projectId) 
+
+    public Task<GitLabReleaseJsonResponse?> GetLatestReleaseAsync(long projectId)
         => GetReleaseAsync(projectId, "permalink/latest");
 
     public async Task<GitLabReleaseJsonResponse?> GetReleaseAsync(long projectId, string tagName) =>
@@ -51,9 +51,14 @@ public class GitLabService
             ReleaseSerializerContext.GitLabReleaseJsonResponse
         );
 
-    public PaginatedEndpoint<GitLabReleaseJsonResponse> GetReleasesAsync(long projectId)
-        => PaginatedEndpoint<GitLabReleaseJsonResponse>.Builder(_http)
+    public PaginatedEndpoint<GitLabReleaseJsonResponse> PageReleases(long projectId)
+        => _http.Paginate<GitLabReleaseJsonResponse>(builder => builder
             .WithBaseUrl($"api/v4/projects/{projectId}/releases")
+            .WithPerPageCount(100)
             .WithJsonContentParser(ReleaseSerializerContext.IEnumerableGitLabReleaseJsonResponse)
-            .WithQueryStringParameters(QueryParams.Sort("desc"), QueryParams.OrderBy("created_at"));
+            .WithQueryStringParameters(
+                QueryParams.Sort("desc"),
+                QueryParams.OrderBy("created_at")
+            )
+        );
 }
