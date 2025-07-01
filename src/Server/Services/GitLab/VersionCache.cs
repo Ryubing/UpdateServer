@@ -131,7 +131,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             );
 
         if (releases is null)
-            goto ReleaseLock;
+            return;
         
         await _semaphore.WaitAsync();
         
@@ -175,8 +175,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
             _cachedProject!.Value.Name, sw.ElapsedMilliseconds);
-
-    ReleaseLock:
+        
         _semaphore.Release();
     }
 
