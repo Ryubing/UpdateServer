@@ -1,3 +1,4 @@
+using System.Net;
 using Gommon;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
@@ -55,47 +56,44 @@ public class DownloadController : ControllerBase
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DownloadLatestStable(
-        [FromKeyedServices("stableCache")] VersionCache vcache
+        [FromKeyedServices("stableCache")] VersionCache vcache, 
+        [FromServices] ILogger<DownloadController> logger
     )
     {
         if (await vcache.GetReleaseAsync(c => c.Latest) is not {} latest)
             return NotFound();
         
-        var uaString = HttpContext.Request.Headers.UserAgent.ToString();
-        
-        if (uaString.ContainsIgnoreCase("Mac"))
-            return Redirect(latest.Downloads.MacOS);
-
-        var platform = uaString.ContainsIgnoreCase("Linux") 
-            ? latest.Downloads.Linux 
-            : latest.Downloads.Windows;
-        
-        return Redirect(uaString.ContainsIgnoreCase("x64")
-            ? platform.X64
-            : platform.Arm64);
+        return RedirectOrProblem(latest, logger, HttpContext.Request.Headers.UserAgent.ToString());
     }
     
     [HttpGet(Constants.CanaryRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DownloadLatestCanary(
-        [FromKeyedServices("canaryCache")] VersionCache vcache
+        [FromKeyedServices("canaryCache")] VersionCache vcache,
+        [FromServices] ILogger<DownloadController> logger
     )
     {
         if (await vcache.GetReleaseAsync(c => c.Latest) is not {} latest)
             return NotFound();
         
-        var uaString = HttpContext.Request.Headers.UserAgent.ToString();
+        return RedirectOrProblem(latest, logger, HttpContext.Request.Headers.UserAgent.ToString());
+    }
+    
+    private ActionResult RedirectOrProblem(VersionCacheEntry cacheEntry, ILogger<DownloadController> logger, string userAgent)
+    {
+        var (platform, arch) = VersionCacheEntry.GetVersionTupleForUserAgent(userAgent);
         
-        if (uaString.ContainsIgnoreCase("Mac"))
-            return Redirect(latest.Downloads.MacOS);
-
-        var platform = uaString.ContainsIgnoreCase("Linux") 
-            ? latest.Downloads.Linux 
-            : latest.Downloads.Windows;
-        
-        return Redirect(uaString.ContainsIgnoreCase("x64")
-            ? platform.X64
-            : platform.Arm64);
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        // I was still getting occasional errors for passing null into a Redirect, so idk
+        if (cacheEntry.GetUrlFor(platform, arch) is not { } url)
+        {
+            logger.LogError(new EventId(1), "Requested download URL was null: Version: {ver}; User-Agent: '{userAgent}'", cacheEntry.Tag, userAgent);
+            
+            return Problem(statusCode: 500,
+                detail: $"The requested download's url was null. Version: {cacheEntry.Tag}; User-Agent: '{userAgent}'");
+        }
+            
+        return Redirect(url);
     }
 }
