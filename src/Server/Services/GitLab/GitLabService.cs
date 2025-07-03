@@ -1,24 +1,18 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using NGitLab;
+using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Update.Server.Helpers.Http;
 
 namespace Ryujinx.Systems.Update.Server.Services.GitLab;
 
 public class GitLabService
 {
-    private static readonly GitLabReleaseJsonResponseSerializerContext ReleaseSerializerContext =
-        new();
-
     private readonly IHttpClientProxy _http;
     public GitLabClient Client { get; }
 
-    private readonly ILogger<GitLabService> _logger;
-
-    public GitLabService(IConfiguration config, ILogger<GitLabService> logger, DefaultHttpClientProxy httpClient)
+    public GitLabService(IConfiguration config, DefaultHttpClientProxy httpClient)
     {
-        _logger = logger;
-
         var gitlabSection = config.GetSection("GitLab");
 
         if (!gitlabSection.Exists())
@@ -32,12 +26,12 @@ public class GitLabService
         _http = httpClient;
     }
 
-    private async ValueTask<T?> HandleNotFoundAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> typeInfo)
+    private async ValueTask<T?> HandleNotFoundAsync<T>(HttpResponseMessage response, JsonTypeInfo<T> typeInfo) where T : class
     {
         var contentString = await response.Content.ReadAsStringAsync();
 
         if (contentString is """{"message":"404 Not Found"}""")
-            return default;
+            return null;
 
         return JsonSerializer.Deserialize(contentString, typeInfo);
     }
@@ -48,14 +42,14 @@ public class GitLabService
     public async Task<GitLabReleaseJsonResponse?> GetReleaseAsync(long projectId, string tagName) =>
         await HandleNotFoundAsync(
             await _http.GetAsync($"api/v4/projects/{projectId}/releases/{tagName}"),
-            ReleaseSerializerContext.GitLabReleaseJsonResponse
+            JsonSerializerContexts.Default.GitLabReleaseJsonResponse
         );
 
     public PaginatedEndpoint<GitLabReleaseJsonResponse> PageReleases(long projectId)
         => _http.Paginate<GitLabReleaseJsonResponse>(builder => builder
             .WithBaseUrl($"api/v4/projects/{projectId}/releases")
             .WithPerPageCount(100)
-            .WithJsonContentParser(ReleaseSerializerContext.IEnumerableGitLabReleaseJsonResponse)
+            .WithJsonContentParser(JsonSerializerContexts.Default.IEnumerableGitLabReleaseJsonResponse)
             .WithQueryStringParameters(
                 QueryParams.Sort("desc"),
                 QueryParams.OrderBy("created_at")
