@@ -153,20 +153,20 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                 {
                     Windows =
                     {
-                        X64 = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("win_x64")).Url,
+                        X64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_x64"))?.Url ?? string.Empty,
                         Arm64 = string.Empty
                     },
                     Linux =
                     {
-                        X64 = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("linux_x64")).Url,
-                        Arm64 = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("linux_arm64")).Url
+                        X64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_x64"))?.Url ?? string.Empty,
+                        Arm64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_arm64"))?.Url ?? string.Empty
                     },
                     LinuxAppImage =
                     {
-                        X64 = release.Assets.Links.First(x => x.AssetName.EndsWithIgnoreCase("x64.AppImage")).Url,
-                        Arm64 = release.Assets.Links.First(x => x.AssetName.EndsWithIgnoreCase("arm64.AppImage")).Url
+                        X64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("x64.AppImage"))?.Url ?? string.Empty,
+                        Arm64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("arm64.AppImage"))?.Url ?? string.Empty
                     },
-                    MacOS = release.Assets.Links.First(x => x.AssetName.ContainsIgnoreCase("macos_universal")).Url
+                    MacOS = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("macos_universal"))?.Url ?? string.Empty
                 }
             };
         }
