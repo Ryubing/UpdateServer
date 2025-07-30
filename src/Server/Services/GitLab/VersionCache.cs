@@ -154,7 +154,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                     Windows =
                     {
                         X64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_x64"))?.Url ?? string.Empty,
-                        Arm64 = string.Empty
+                        Arm64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_arm64"))?.Url ?? string.Empty
                     },
                     Linux =
                     {
