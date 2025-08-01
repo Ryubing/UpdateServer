@@ -2,6 +2,7 @@
 using Gommon;
 using NGitLab;
 using NGitLab.Models;
+using NuGet.Packaging;
 using Ryujinx.Systems.Update.Common;
 
 namespace Ryujinx.Systems.Update.Server.Services.GitLab;
@@ -132,6 +133,46 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         if (releases is null)
             return;
+
+        var tempCacheEntries = releases.Select(release =>
+            new VersionCacheEntry
+            {
+                Tag = release.TagName,
+                ReleaseUrl = ReleaseUrlFormat.Format(release.TagName),
+                Downloads =
+                {
+                    Windows =
+                    {
+                        X64 = release.Assets.Links
+                            .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_x64"))
+                            ?.Url ?? string.Empty,
+                        Arm64 = release.Assets.Links
+                            .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_arm64"))
+                            ?.Url ?? string.Empty
+                    },
+                    Linux =
+                    {
+                        X64 = release.Assets.Links
+                            .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_x64"))
+                            ?.Url ?? string.Empty,
+                        Arm64 = release.Assets.Links
+                            .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_arm64"))
+                            ?.Url ?? string.Empty
+                    },
+                    LinuxAppImage =
+                    {
+                        X64 = release.Assets.Links
+                            .FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("x64.AppImage"))
+                            ?.Url ?? string.Empty,
+                        Arm64 = release.Assets.Links
+                            .FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("arm64.AppImage"))
+                            ?.Url ?? string.Empty
+                    },
+                    MacOS = release.Assets.Links
+                        .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("macos_universal"))
+                        ?.Url ?? string.Empty
+                }
+            }).ToDictionary(x => x.Tag, x => x);
         
         await _semaphore.WaitAsync();
         
@@ -142,41 +183,21 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             Clear();
         }
 
-        foreach (var release in releases)
+        foreach (var (tag, entry) in tempCacheEntries)
         {
-            _logger.LogTrace("Adding version cache entry {tag} for {project}", release.TagName, _cachedProject!.Value.Name);
-            this[release.TagName] = new VersionCacheEntry
-            {
-                Tag = release.TagName,
-                ReleaseUrl = ReleaseUrlFormat.Format(release.TagName),
-                Downloads =
-                {
-                    Windows =
-                    {
-                        X64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_x64"))?.Url ?? string.Empty,
-                        Arm64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_arm64"))?.Url ?? string.Empty
-                    },
-                    Linux =
-                    {
-                        X64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_x64"))?.Url ?? string.Empty,
-                        Arm64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_arm64"))?.Url ?? string.Empty
-                    },
-                    LinuxAppImage =
-                    {
-                        X64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("x64.AppImage"))?.Url ?? string.Empty,
-                        Arm64 = release.Assets.Links.FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("arm64.AppImage"))?.Url ?? string.Empty
-                    },
-                    MacOS = release.Assets.Links.FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("macos_universal"))?.Url ?? string.Empty
-                }
-            };
+            _logger.LogTrace("Adding version cache entry {tag} for {project}", tag, _cachedProject!.Value.Name);
+
+            this[tag] = entry;
         }
+        
+        tempCacheEntries.Clear();
 
         sw.Stop();
+        
+        _semaphore.Release();
 
         _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
             _cachedProject!.Value.Name, sw.ElapsedMilliseconds);
-        
-        _semaphore.Release();
     }
 
     public static void InitializeVersionCaches(WebApplication app)
