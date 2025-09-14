@@ -2,7 +2,6 @@
 using Gommon;
 using NGitLab;
 using NGitLab.Models;
-using NuGet.Packaging;
 using Ryujinx.Systems.Update.Common;
 
 namespace Ryujinx.Systems.Update.Server.Services.GitLab;
