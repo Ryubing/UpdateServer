@@ -14,10 +14,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Gommon" Version="2.7.1.2" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5"/>
-        <PackageReference Include="NGitLab" Version="8.7.0" />
-        <PackageReference Include="NSwag.AspNetCore" Version="14.2.0" />
+        <PackageReference Include="Gommon" Version="2.8.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+        <PackageReference Include="NGitLab" Version="10.3.0" />
+        <PackageReference Include="NSwag.AspNetCore" Version="14.5.0" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" Condition="'$(Configuration)'=='Debug'" />
         
         <ProjectReference Include="../Common/Ryujinx.Systems.Update.Common.csproj" />

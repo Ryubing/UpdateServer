@@ -13,7 +13,7 @@ public interface IHttpClientProxy
     /// <param name="option"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    /// <remarks>Do no call. Use an overload.</remarks>
+    /// <remarks>Do not call. Use an overload.</remarks>
     protected Task<HttpResponseMessage> SendAsync(string actualCaller, HttpRequestMessage request, HttpCompletionOption? option = null, CancellationToken? token = null);
     
     public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, HttpCompletionOption? option = null,

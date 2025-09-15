@@ -23,7 +23,7 @@ public partial class PaginatedEndpoint<T>
         public HttpContentParser ContentParser { get; private set; } = null!;
         public int PerPage { get; private set; } = 100;
 
-        public Dictionary<string, object> QueryStringParameters { get; private set; } = new();
+        public SafeDictionary<string, object> QueryStringParameters { get; private set; } = new();
 
         public BuilderApi WithBaseUrl(string url)
         {
@@ -36,12 +36,9 @@ public partial class PaginatedEndpoint<T>
             ContentParser = contentParser;
             return this;
         }
-        
+
         public BuilderApi WithJsonContentParser(JsonTypeInfo<IEnumerable<T>> typeInfo)
-        {
-            ContentParser = content => content.ReadFromJsonAsync(typeInfo)!;
-            return this;
-        }
+            => WithContentParser(content => content.ReadFromJsonAsync(typeInfo)!);
         
         public BuilderApi WithPerPageCount(int perPage)
         {
