@@ -1,5 +1,3 @@
-using System.Net;
-using Gommon;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Update.Server.Services.GitLab;
