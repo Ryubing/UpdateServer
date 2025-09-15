@@ -12,7 +12,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     private readonly ILogger<VersionCache> _logger;
     private readonly PeriodicTimer? _refreshTimer;
 
-    private (string Name, long Id, string Path)? _cachedProject;
+    private Project? _cachedProject;
+
+    public bool HasProjectInfo => _cachedProject != null;
+
+    public string ProjectName => _cachedProject!.NameWithNamespace;
+    public long ProjectId => _cachedProject!.Id;
+    public string ProjectPath => _cachedProject!.PathWithNamespace;
 
     private string? _latestTag;
 
@@ -52,18 +58,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         }
     }
 
-    public string ReleaseUrlFormat => $"{_gitlabEndpoint.TrimEnd('/')}/{_cachedProject!.Value.Path}/-/releases/{{0}}";
+    public string ReleaseUrlFormat => $"{_gitlabEndpoint.TrimEnd('/')}/{ProjectPath}/-/releases/{{0}}";
 
     public void Init(ProjectId projectId) => Executor.ExecuteBackgroundAsync(async () =>
     {
         try
         {
-            if (!_cachedProject.HasValue)
-            {
-                var project = await _gl.Client.Projects.GetAsync(projectId);
-
-                _cachedProject = (project.NameWithNamespace, project.Id, project.PathWithNamespace);
-            }
+            _cachedProject ??= await _gl.Client.Projects.GetAsync(projectId);
         }
         catch (GitLabException e)
         {
@@ -73,7 +74,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             return;
         }
 
-        _logger.LogInformation("Initializing version cache for {project}", _cachedProject!.Value.Name);
+        _logger.LogInformation("Initializing version cache for {project}", ProjectName);
 
         await RefreshAsync();
 
@@ -85,12 +86,12 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
             _logger.LogInformation(
                 "Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}",
-                _cachedProject!.Value.Name, howToRefresh);
+                ProjectName, howToRefresh);
             return;
         }
 
         _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
-            _cachedProject!.Value.Name, _refreshTimer.Period.TotalMinutes);
+            ProjectName, _refreshTimer.Period.TotalMinutes);
         while (await _refreshTimer.WaitForNextTickAsync())
         {
             await RefreshAsync();
@@ -111,19 +112,19 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public async Task RefreshAsync()
     {
-        _logger.LogInformation("Reloading version cache for {project}", _cachedProject!.Value.Name);
+        _logger.LogInformation("Reloading version cache for {project}", ProjectName);
 
-        _latestTag = (await _gl.GetLatestReleaseAsync(_cachedProject.Value.Id))?.TagName;
+        _latestTag = (await _gl.GetLatestReleaseAsync(ProjectId))?.TagName;
 
         if (_latestTag is null)
         {
-            _logger.LogWarning("Latest version for {project} was a 404, aborting.", _cachedProject.Value.Name);
+            _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
             return;
         }
 
         var sw = Stopwatch.StartNew();
 
-        var releases = await _gl.PageReleases(_cachedProject.Value.Id)
+        var releases = await _gl.PageReleases(ProjectId)
             .GetAllAsync(onNonSuccess:
                 code => _logger.LogError(
                     "One of the pagination requests to get all releases returned a non-success status code: {code}",
@@ -178,13 +179,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         if (Count > 0)
         {
             _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count,
-                _cachedProject!.Value.Name);
+                ProjectName);
             Clear();
         }
 
         foreach (var (tag, entry) in tempCacheEntries)
         {
-            _logger.LogTrace("Adding version cache entry {tag} for {project}", tag, _cachedProject!.Value.Name);
+            _logger.LogTrace("Adding version cache entry {tag} for {project}", tag, ProjectName);
 
             this[tag] = entry;
         }
@@ -196,7 +197,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         _semaphore.Release();
 
         _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
-            _cachedProject!.Value.Name, sw.ElapsedMilliseconds);
+            ProjectName, sw.ElapsedMilliseconds);
     }
 
     public static void InitializeVersionCaches(WebApplication app)
