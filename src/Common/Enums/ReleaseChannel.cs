@@ -8,8 +8,10 @@ public enum ReleaseChannel
 
 public static partial class EnumExtensions
 {
-    public static string AsQueryStringValue(this ReleaseChannel rc) =>
-        Enum.GetName(rc)?.ToLower() ?? throw new ArgumentOutOfRangeException(nameof(rc));
+    extension(ReleaseChannel rc)
+    {
+        public string QueryStringValue => Enum.GetName(rc)?.ToLower() ?? throw new ArgumentOutOfRangeException(nameof(rc));
+    }
 
     public static bool TryParseAsReleaseChannel(this string? rawRc, out ReleaseChannel rc)
     {

@@ -17,24 +17,25 @@ public partial class UpdateClient
     /// <param name="rc">The desired release channel.</param>
     /// <returns>The HTTP response content body as a <see cref="Stream"/>, or null if any non-200 series HTTP status code is returned from the server.</returns>
     public async Task<Stream?> DownloadAsync(
-        string version,    
+        string version,
         SupportedPlatform platform,
         SupportedArchitecture arch,
         ReleaseChannel rc = ReleaseChannel.Stable)
     {
         var url = $"{Constants.RouteName_Download}/{Constants.QueryRoute}" +
-                  $"?os={platform.AsQueryStringValue()}" +
-                  $"&arch={arch.AsQueryStringValue()}" +
-                  $"&rc={rc.AsQueryStringValue()}" +
+                  $"?os={platform.QueryStringValue}" +
+                  $"&arch={arch.QueryStringValue}" +
+                  $"&rc={rc.QueryStringValue}" +
                   $"&version={version}";
-        
+
         Log("Downloading the file from: {0}", [QualifyUriPath(url)]);
-        
+
         var resp = await _http.GetAsync(url);
 
         if (!resp.IsSuccessStatusCode)
         {
-            Log("Received non-success status code ({0}) for download query!", [Enum.GetName(resp.StatusCode) ?? $"{(int)resp.StatusCode}"]);
+            Log("Received non-success status code ({0}) for download query!",
+                [Enum.GetName(resp.StatusCode) ?? $"{(int)resp.StatusCode}"]);
             return null;
         }
 

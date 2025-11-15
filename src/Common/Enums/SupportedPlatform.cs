@@ -10,13 +10,17 @@ public enum SupportedPlatform
 
 public static partial class EnumExtensions
 {
-    public static string AsQueryStringValue(this SupportedPlatform supportedPlatform) => supportedPlatform switch
+    extension(SupportedPlatform platform)
     {
-        SupportedPlatform.Windows => "win",
-        SupportedPlatform.Linux => "linux",
-        SupportedPlatform.Mac => "mac",
-        _ => throw new ArgumentOutOfRangeException(nameof(supportedPlatform))
-    };
+        public string QueryStringValue => platform switch
+        {
+            SupportedPlatform.Windows => "win",
+            SupportedPlatform.Linux => "linux",
+            SupportedPlatform.LinuxAppImage => "linuxappimage",
+            SupportedPlatform.Mac => "mac",
+            _ => throw new ArgumentOutOfRangeException(nameof(platform))
+        };
+    }
 
     public static bool TryParseAsSupportedPlatform(this string? os, out SupportedPlatform platform)
     {

@@ -23,9 +23,9 @@ public partial class UpdateClient
         ReleaseChannel rc = ReleaseChannel.Stable)
     {
         var url = $"{Constants.RouteName_Latest}/{Constants.QueryRoute}" +
-                  $"?os={platform.AsQueryStringValue()}" +
-                  $"&arch={arch.AsQueryStringValue()}" +
-                  $"&rc={rc.AsQueryStringValue()}";
+                  $"?os={platform.QueryStringValue}" +
+                  $"&arch={arch.QueryStringValue}" +
+                  $"&rc={rc.QueryStringValue}";
 
         Log("Checking for updates from: {0}", [QualifyUriPath(url)]);
 

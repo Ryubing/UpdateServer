@@ -22,7 +22,7 @@ public partial class UpdateClient
             return null;
         }
         
-        var httpRequest = new HttpRequestMessage(HttpMethod.Patch, $"{Constants.FullRouteName_Api_Admin_RefreshCache}?rc={rc.AsQueryStringValue()}");
+        var httpRequest = new HttpRequestMessage(HttpMethod.Patch, $"{Constants.FullRouteName_Api_Admin_RefreshCache}?rc={rc.QueryStringValue}");
         ApplyAuthorization(httpRequest);
         
         if (await _http.SendAsync(httpRequest) is { IsSuccessStatusCode: false} resp)

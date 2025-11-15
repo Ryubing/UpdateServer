@@ -8,8 +8,11 @@ public enum SupportedArchitecture
 
 public static partial class EnumExtensions
 {
-    public static string AsQueryStringValue(this SupportedArchitecture arch) =>
-        Enum.GetName(arch)?.ToLower() ?? throw new ArgumentOutOfRangeException(nameof(arch));
+    extension(SupportedArchitecture arch)
+    {
+        public string QueryStringValue =>
+            Enum.GetName(arch)?.ToLower() ?? throw new ArgumentOutOfRangeException(nameof(arch));
+    }
 
     public static bool TryParseAsSupportedArchitecture(this string? rawArch, out SupportedArchitecture arch)
     {
