@@ -20,26 +20,26 @@ public class LatestController : ControllerBase
     {
         if (os == string.Empty)
             return BadRequest("os was empty.");
-        
+
         if (arch == string.Empty)
             return BadRequest("arch was empty.");
 
         if (rc == string.Empty)
             return BadRequest("rc was empty.");
-        
+
         if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
             return BadRequest($"Unknown platform '{os}'");
 
         if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
             return BadRequest($"Unknown architecture '{arch}'");
-        
+
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return BadRequest(
                 $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
 
         var vcache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
-        
-        if (await vcache.GetReleaseAsync(c => c.Latest) is not { } latest)
+
+        if (await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch)) is not { } latest)
             return NotFound();
 
         return Ok(new VersionResponse

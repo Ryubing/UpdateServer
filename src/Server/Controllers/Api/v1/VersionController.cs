@@ -18,14 +18,14 @@ public class VersionController : ControllerBase
         [FromQuery] string? arch = null
         )
     {
-        if (await vcache.GetReleaseAsync(c => c.Latest) is not {} latest)
-            return NotFound();
-        
         if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
             return BadRequest($"Unknown platform '{os}'");
         
         if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
             return BadRequest($"Unknown architecture '{arch}'");
+        
+        if (await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch)) is not {} latest)
+            return NotFound();
         
         return Ok(new VersionResponse
         {
@@ -45,14 +45,14 @@ public class VersionController : ControllerBase
         [FromQuery] string? arch = null
     )
     {
-        if (await vcache.GetReleaseAsync(c => c.Latest) is not { } latest)
-            return NotFound();
-
         if (!os.TryParseAsSupportedPlatform(out var supportedPlatform))
             return BadRequest($"Unknown platform '{os}'");
         
         if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
             return BadRequest($"Unknown architecture '{arch}'");
+        
+        if (await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch)) is not { } latest)
+            return NotFound();
 
         return Ok(new VersionResponse
         {

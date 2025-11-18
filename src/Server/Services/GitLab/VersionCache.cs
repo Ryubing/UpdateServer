@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Gommon;
 using NGitLab;
 using NGitLab.Models;
@@ -9,7 +10,7 @@ namespace Ryujinx.Systems.Update.Server.Services.GitLab;
 public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 {
     private readonly GitLabService _gl;
-    private readonly ILogger<VersionCache> _logger;
+    public ILogger<VersionCache> Logger { get; }
     private readonly PeriodicTimer? _refreshTimer;
 
     private Project? _cachedProject;
@@ -22,6 +23,12 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     private string? _latestTag;
 
+    public PinnedVersions PinnedVersions { get; private set; }
+
+    // ReSharper disable once ReplaceWithFieldKeyword
+
+    // ReleaseUrlFormat is a computed property; using the field keyword instead of this field
+    // works and compiles, but it looks really wrong and I hate it.
     private readonly string _gitlabEndpoint;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -29,7 +36,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     public VersionCache(IConfiguration config, GitLabService gitlabService, ILogger<VersionCache> logger)
     {
         _gl = gitlabService;
-        _logger = logger;
+        Logger = logger;
 
         _gitlabEndpoint = config["GitLab:Endpoint"]!;
 
@@ -60,7 +67,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public string ReleaseUrlFormat => $"{_gitlabEndpoint.TrimEnd('/')}/{ProjectPath}/-/releases/{{0}}";
 
-    public void Init(ProjectId projectId) => Executor.ExecuteBackgroundAsync(async () =>
+    public void Init(ProjectId projectId, PinnedVersions pinnedVersions) => Executor.ExecuteBackgroundAsync(async () =>
     {
         try
         {
@@ -68,13 +75,15 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         }
         catch (GitLabException e)
         {
-            _logger.LogError(
+            Logger.LogError(
                 "Encountered error when getting the project ({project}) for the version cache. Aborting. Error: {errorMessage}",
                 projectId.ValueAsString(), e.ErrorMessage);
             return;
         }
 
-        _logger.LogInformation("Initializing version cache for {project}", ProjectName);
+        Logger.LogInformation("Initializing version cache for {project}", ProjectName);
+
+        PinnedVersions = pinnedVersions;
 
         await RefreshAsync();
 
@@ -84,13 +93,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                 ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
                 : "restarting the server. Set an admin access token in appsettings.json to enable an endpoint to do this.";
 
-            _logger.LogInformation(
+            Logger.LogInformation(
                 "Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}",
                 ProjectName, howToRefresh);
             return;
         }
 
-        _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
+        Logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
             ProjectName, _refreshTimer.Period.TotalMinutes);
         while (await _refreshTimer.WaitForNextTickAsync())
         {
@@ -102,6 +111,14 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public VersionCacheEntry? Latest => this[_latestTag ?? string.Empty];
 
+    public VersionCacheEntry? GetLatest(SupportedPlatform platform, SupportedArchitecture arch)
+    {
+        if (PinnedVersions.Find(platform, arch) is { } pinnedVersion)
+            return this[pinnedVersion];
+
+        return Latest;
+    }
+
     public async Task<VersionCacheEntry?> GetReleaseAsync(Func<VersionCache, VersionCacheEntry?> getter)
     {
         using (await TakeLockAsync())
@@ -112,13 +129,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public async Task RefreshAsync()
     {
-        _logger.LogInformation("Reloading version cache for {project}", ProjectName);
+        Logger.LogInformation("Reloading version cache for {project}", ProjectName);
 
         _latestTag = (await _gl.GetLatestReleaseAsync(ProjectId))?.TagName;
 
         if (_latestTag is null)
         {
-            _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
+            Logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
             return;
         }
 
@@ -126,7 +143,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         var releases = await _gl.PageReleases(ProjectId)
             .GetAllAsync(onNonSuccess:
-                code => _logger.LogError(
+                code => Logger.LogError(
                     "One of the pagination requests to get all releases returned a non-success status code: {code}",
                     Enum.GetName(code) ?? $"{(int)code}")
             );
@@ -169,42 +186,43 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                             ?.Url ?? string.Empty
                     },
                     MacOS = release.Assets.Links
-                        .FirstOrDefault(x => 
+                        .FirstOrDefault(x =>
                             x.AssetName.ContainsIgnoreCase("macos_universal") ||
                             x.AssetName.ContainsIgnoreCase("macos_arm64"))
                         ?.Url ?? string.Empty
                 }
             }).ToDictionary(x => x.Tag, x => x);
-        
+
         await _semaphore.WaitAsync();
-        
+
         if (Count > 0)
         {
-            _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count,
+            Logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count,
                 ProjectName);
             Clear();
         }
 
         foreach (var (tag, entry) in tempCacheEntries)
         {
-            _logger.LogTrace("Adding version cache entry {tag} for {project}", tag, ProjectName);
+            Logger.LogTrace("Adding version cache entry {tag} for {project}", tag, ProjectName);
 
             this[tag] = entry;
         }
-        
+
         tempCacheEntries.Clear();
 
         sw.Stop();
-        
+
         _semaphore.Release();
 
-        _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
+        Logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
             ProjectName, sw.ElapsedMilliseconds);
     }
 
     public static void InitializeVersionCaches(WebApplication app)
     {
-        var versionCacheSection = app.Configuration.GetSection("GitLab").GetRequiredSection("VersionCacheSources");
+        var versionCacheSection = app.Configuration.GetSection("GitLab")
+            .GetRequiredSection("VersionCacheSources");
 
         var stableSource = versionCacheSection.GetValue<string>("Stable");
 
@@ -212,11 +230,19 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             throw new Exception(
                 "Cannot start the server without a GitLab repository in GitLab:VersionCacheSources:Stable");
 
-        app.Services.GetRequiredKeyedService<VersionCache>("stableCache").Init(new ProjectId(stableSource));
+        var vpSection = app.Configuration.GetSection("VersionPinning");
+
+        var stableCache = app.Services.GetRequiredKeyedService<VersionCache>("stableCache");
+        stableCache.Init(stableSource, 
+            new PinnedVersions(stableCache, vpSection.GetSection("Stable")));
 
         var canarySource = versionCacheSection.GetValue<string>("Canary");
 
         if (canarySource != null)
-            app.Services.GetRequiredKeyedService<VersionCache>("canaryCache").Init(new ProjectId(canarySource));
+        {
+            var canaryCache = app.Services.GetRequiredKeyedService<VersionCache>("canaryCache");
+            canaryCache.Init(canarySource, 
+                new PinnedVersions(canaryCache, vpSection.GetSection("Canary")));
+        }
     }
 }
