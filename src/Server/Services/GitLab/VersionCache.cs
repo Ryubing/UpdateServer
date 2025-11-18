@@ -169,7 +169,9 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                             ?.Url ?? string.Empty
                     },
                     MacOS = release.Assets.Links
-                        .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("macos_universal"))
+                        .FirstOrDefault(x => 
+                            x.AssetName.ContainsIgnoreCase("macos_universal") ||
+                            x.AssetName.ContainsIgnoreCase("macos_arm64"))
                         ?.Url ?? string.Empty
                 }
             }).ToDictionary(x => x.Tag, x => x);
