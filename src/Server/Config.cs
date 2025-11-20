@@ -18,12 +18,12 @@ internal static class Config
         DiskProvider = new PhysicalFileProvider(new FilePath(Environment.CurrentDirectory) / "config");
     }
 
-    public static bool ShouldConfigureVersionPinning(string[] args,
+    public static bool UseVersionPinning(string[] args,
         [MaybeNullWhen(false)] out JsonConfigurationSource jcs)
     {
         jcs = null;
 
-        if (args.Any(x => x.EqualsAnyIgnoreCase("--gen-version-pinning")))
+        if (args.Any(x => x.EqualsIgnoreCase("--gen-version-pinning")))
         {
             if (!File.Exists("config/versionPinning.json"))
                 File.WriteAllText("config/versionPinning.json",
@@ -42,17 +42,14 @@ internal static class Config
         }
 
         if (File.Exists("config/versionPinning.json")) 
-            jcs = VersionPinningSource();
+            jcs = new()
+            {
+                FileProvider = DiskProvider,
+                Optional = true,
+                ReloadOnChange = false,
+                Path = "versionPinning.json"
+            };
 
         return jcs != null;
     }
-
-    public static JsonConfigurationSource VersionPinningSource() =>
-        new()
-        {
-            FileProvider = DiskProvider,
-            Optional = true,
-            ReloadOnChange = false,
-            Path = "versionPinning.json"
-        };
 }

@@ -8,7 +8,7 @@ CommandLineState.Init(args);
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (Config.ShouldConfigureVersionPinning(args, out var configSource))
+if (Config.UseVersionPinning(args, out var configSource))
     builder.Configuration.Sources.Add(configSource);
 
 if (CommandLineState.ListenPort != null)
