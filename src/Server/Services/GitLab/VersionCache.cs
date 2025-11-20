@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Gommon;
 using NGitLab;
 using NGitLab.Models;
@@ -10,7 +9,7 @@ namespace Ryujinx.Systems.Update.Server.Services.GitLab;
 public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 {
     private readonly GitLabService _gl;
-    public ILogger<VersionCache> Logger { get; }
+    private readonly ILogger<VersionCache> _logger;
     private readonly PeriodicTimer? _refreshTimer;
 
     private Project? _cachedProject;
@@ -23,7 +22,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     private string? _latestTag;
 
-    public PinnedVersions PinnedVersions { get; private set; }
+    private PinnedVersions PinnedVersions { get; set; } = null!; //late-init, see Init method
 
     // ReSharper disable once ReplaceWithFieldKeyword
 
@@ -36,7 +35,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     public VersionCache(IConfiguration config, GitLabService gitlabService, ILogger<VersionCache> logger)
     {
         _gl = gitlabService;
-        Logger = logger;
+        _logger = logger;
 
         _gitlabEndpoint = config["GitLab:Endpoint"]!;
 
@@ -75,13 +74,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         }
         catch (GitLabException e)
         {
-            Logger.LogError(
+            _logger.LogError(
                 "Encountered error when getting the project ({project}) for the version cache. Aborting. Error: {errorMessage}",
                 projectId.ValueAsString(), e.ErrorMessage);
             return;
         }
 
-        Logger.LogInformation("Initializing version cache for {project}", ProjectName);
+        _logger.LogInformation("Initializing version cache for {project}", ProjectName);
 
         PinnedVersions = pinnedVersions;
 
@@ -93,14 +92,15 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                 ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
                 : "restarting the server. Set an admin access token in appsettings.json to enable an endpoint to do this.";
 
-            Logger.LogInformation(
+            _logger.LogInformation(
                 "Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}",
                 ProjectName, howToRefresh);
             return;
         }
 
-        Logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
+        _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
             ProjectName, _refreshTimer.Period.TotalMinutes);
+        
         while (await _refreshTimer.WaitForNextTickAsync())
         {
             await RefreshAsync();
@@ -129,13 +129,13 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public async Task RefreshAsync()
     {
-        Logger.LogInformation("Reloading version cache for {project}", ProjectName);
+        _logger.LogInformation("Reloading version cache for {project}", ProjectName);
 
         _latestTag = (await _gl.GetLatestReleaseAsync(ProjectId))?.TagName;
 
         if (_latestTag is null)
         {
-            Logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
+            _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
             return;
         }
 
@@ -143,7 +143,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         var releases = await _gl.PageReleases(ProjectId)
             .GetAllAsync(onNonSuccess:
-                code => Logger.LogError(
+                code => _logger.LogError(
                     "One of the pagination requests to get all releases returned a non-success status code: {code}",
                     Enum.GetName(code) ?? $"{(int)code}")
             );
@@ -197,14 +197,14 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         if (Count > 0)
         {
-            Logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count,
+            _logger.LogInformation("Clearing {entryCount} version cache entries for {project}", Count,
                 ProjectName);
             Clear();
         }
 
         foreach (var (tag, entry) in tempCacheEntries)
         {
-            Logger.LogTrace("Adding version cache entry {tag} for {project}", tag, ProjectName);
+            _logger.LogTrace("Adding version cache entry {tag} for {project}", tag, ProjectName);
 
             this[tag] = entry;
         }
@@ -215,7 +215,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         _semaphore.Release();
 
-        Logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
+        _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
             ProjectName, sw.ElapsedMilliseconds);
     }
 
@@ -232,9 +232,11 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         var vpSection = app.Configuration.GetSection("VersionPinning");
 
+        var pvLogger = app.Services.Get<ILoggerFactory>().CreateLogger<PinnedVersions>();
+
         var stableCache = app.Services.GetRequiredKeyedService<VersionCache>("stableCache");
         stableCache.Init(stableSource, 
-            new PinnedVersions(stableCache, vpSection.GetSection("Stable")));
+            new PinnedVersions(pvLogger, vpSection.GetSection("Stable")));
 
         var canarySource = versionCacheSection.GetValue<string>("Canary");
 
@@ -242,7 +244,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         {
             var canaryCache = app.Services.GetRequiredKeyedService<VersionCache>("canaryCache");
             canaryCache.Init(canarySource, 
-                new PinnedVersions(canaryCache, vpSection.GetSection("Canary")));
+                new PinnedVersions(pvLogger, vpSection.GetSection("Canary")));
         }
     }
 }
