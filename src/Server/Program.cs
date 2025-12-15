@@ -11,6 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 if (Config.UseVersionPinning(args, out var configSource))
     builder.Configuration.Sources.Add(configSource);
 
+builder.TryUseVersionProvider(args);
+
 if (CommandLineState.ListenPort != null)
     builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(CommandLineState.ListenPort.Value));
 
@@ -32,8 +34,6 @@ Swagger.TrySetup(builder);
 builder.Services.AddControllers();
 
 var app = builder.Build();
-
-var b = app.Configuration;
 
 app.UseForwardedHeaders();
 

@@ -1,7 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Gommon;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.FileProviders;
+using Ryujinx.Systems.Update.Server.Services;
 
 namespace Ryujinx.Systems.Update.Server;
 
@@ -41,7 +44,7 @@ internal static class Config
                 );
         }
 
-        if (File.Exists("config/versionPinning.json")) 
+        if (File.Exists("config/versionPinning.json"))
             jcs = new()
             {
                 FileProvider = DiskProvider,
@@ -51,5 +54,32 @@ internal static class Config
             };
 
         return jcs != null;
+    }
+
+    public static void TryUseVersionProvider(this WebApplicationBuilder builder, string[] args)
+    {
+        if (args.Any(x => x.EqualsIgnoreCase("--gen-version-provider")))
+        {
+            if (!File.Exists("config/versionProvider.json"))
+                File.WriteAllText("config/versionProvider.json", 
+                    JsonSerializer.Serialize(new VersionProvider
+                    {
+                        Stable = new()
+                        {
+                            Format = "1.{MAJOR}.0",
+                            Major = 3,
+                            Build = 0
+                        },
+                        Canary = new()
+                        {
+                            Format = "1.{MAJOR}.{BUILD}",
+                            Major = 3,
+                            Build = 2000
+                        }
+                    }, JSCtx.ReadableDefault.VersionProvider));
+        }
+
+        if (File.Exists("config/versionProvider.json"))
+            builder.Services.AddSingleton<VersionProviderService>();
     }
 }

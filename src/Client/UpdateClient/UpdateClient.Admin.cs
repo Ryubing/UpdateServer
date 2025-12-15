@@ -21,11 +21,12 @@ public partial class UpdateClient
             Log("Cannot request cache refresh, as there is no configured admin access token.");
             return null;
         }
-        
-        var httpRequest = new HttpRequestMessage(HttpMethod.Patch, $"{Constants.FullRouteName_Api_Admin_RefreshCache}?rc={rc.QueryStringValue}");
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Patch,
+            $"{Constants.FullRouteName_Api_Admin_RefreshCache}?rc={rc.QueryStringValue}");
         ApplyAuthorization(httpRequest);
-        
-        if (await _http.SendAsync(httpRequest) is { IsSuccessStatusCode: false} resp)
+
+        if (await _http.SendAsync(httpRequest) is { IsSuccessStatusCode: false } resp)
         {
             Log("Refreshing version cache failed: received status code {0}; content body: {1}",
                 [Enum.GetName(resp.StatusCode) ?? $"{(int)resp.StatusCode}", await resp.Content.ReadAsStringAsync()]);

@@ -19,6 +19,7 @@ public class RefreshCacheController : ControllerBase
     [HttpPatch]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status418ImATeapot)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [SuppressMessage("ReSharper.DPA", "DPA0011: High execution time of MVC action")]
@@ -34,13 +35,13 @@ public class RefreshCacheController : ControllerBase
 
         if (!AdminEndpointMetadata.AccessToken.EqualsIgnoreCase(HttpContext.Request.Headers.Authorization))
             return Unauthorized();
-        
+
         var minutesSinceLastRefresh = (DateTimeOffset.Now - LastRefreshes[releaseChannel]).TotalMinutes;
         if (minutesSinceLastRefresh <= 1)
             return Problem("Try again later.", statusCode: 429);
 
         await HttpContext.RequestServices.GetCacheFor(releaseChannel).RefreshAsync();
-        
+
         LastRefreshes[releaseChannel] = DateTimeOffset.Now;
 
         return Accepted();
