@@ -8,7 +8,7 @@ public partial class UpdateClient
     ///     Query the next version for a release channel.
     /// </summary>
     /// <param name="rc">The target release channel.</param>
-    /// <returns>true if request success; false if non-200 series HTTP status code, null if not configured to support this endpoint.</returns>
+    /// <returns>Plain version string if request success; null if non-200 series HTTP status code or if not configured to support this endpoint.</returns>
     public async Task<string?> NextVersionAsync(ReleaseChannel rc)
     {
         var httpRequest = new HttpRequestMessage(HttpMethod.Get,
