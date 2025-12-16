@@ -13,7 +13,6 @@ public partial class UpdateClient
     {
         var httpRequest = new HttpRequestMessage(HttpMethod.Get,
             $"{Constants.FullRouteName_Api_Versioning}/{Constants.RouteName_Api_Versioning_GetNextVersion}?rc={rc.QueryStringValue}");
-        ApplyAuthorization(httpRequest);
 
         var resp = await _http.SendAsync(httpRequest);
 
