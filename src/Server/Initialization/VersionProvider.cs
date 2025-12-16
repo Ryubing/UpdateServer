@@ -22,7 +22,7 @@ public class VersionProvider
     public void IncrementAndReset()
     {
         Stable.Major++;
-        Stable.Build = 0;
+        Stable.Build = -1;
         Canary.Major = Stable.Major;
         Canary.Build = 0;
         Save();
@@ -41,7 +41,7 @@ public class VersionProvider
     {
         public string Format { get; set; } = "1.{MAJOR}.{BUILD}";
         public ulong Major { get; set; }
-        public ulong Build { get; set; }
+        public long Build { get; set; }
 
         public Entry CopyIncrement() => this with { Build = Build + 1 };
 

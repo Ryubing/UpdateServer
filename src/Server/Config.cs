@@ -68,13 +68,13 @@ internal static class Config
                         {
                             Format = "1.{MAJOR}.0",
                             Major = 3,
-                            Build = 0
+                            Build = -1
                         },
                         Canary = new()
                         {
                             Format = "1.{MAJOR}.{BUILD}",
                             Major = 3,
-                            Build = 2000
+                            Build = 0
                         }
                     }, JSCtx.ReadableDefault.VersionProvider));
         }

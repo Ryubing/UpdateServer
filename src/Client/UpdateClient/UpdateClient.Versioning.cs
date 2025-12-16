@@ -9,7 +9,7 @@ public partial class UpdateClient
     /// </summary>
     /// <param name="rc">The target release channel.</param>
     /// <returns>Plain version string if request success; null if non-200 series HTTP status code or if not configured to support this endpoint.</returns>
-    public async Task<string?> NextVersionAsync(ReleaseChannel rc)
+    public async Task<string?> GetNextVersionAsync(ReleaseChannel rc)
     {
         var httpRequest = new HttpRequestMessage(HttpMethod.Get,
             $"{Constants.FullRouteName_Api_Versioning}/{Constants.RouteName_Api_Versioning_GetNextVersion}?rc={rc.QueryStringValue}");
@@ -19,7 +19,7 @@ public partial class UpdateClient
 
         if (!resp.IsSuccessStatusCode)
         {
-            Log("Increment version failed: received status code {0}; content body: {1}",
+            Log("Getting next version failed: received status code {0}; content body: {1}",
                 [Enum.GetName(resp.StatusCode) ?? $"{(int)resp.StatusCode}", await resp.Content.ReadAsStringAsync()]);
             return null;
         }
