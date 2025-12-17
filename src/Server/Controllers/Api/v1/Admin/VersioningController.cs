@@ -9,6 +9,13 @@ namespace Ryujinx.Systems.Update.Server.Controllers.Admin;
 [ApiController]
 public class VersioningController : Controller
 {
+    private readonly ILogger<VersioningController> _logger;
+
+    public VersioningController(ILogger<VersioningController> logger)
+    {
+        _logger = logger;
+    }
+
     [HttpGet(Constants.RouteName_Api_Versioning_GetNextVersion)]
     public async Task<ActionResult<string>> GetNext([FromQuery] string rc)
     {
@@ -53,7 +60,9 @@ public class VersioningController : Controller
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
                 statusCode: 418);
 
-        versionProviderService.IncrementBuild(releaseChannel);
+        var newVersion = versionProviderService.IncrementBuild(releaseChannel);
+
+        _logger.LogInformation("{channel} incremented to: {newVersion}", releaseChannel, newVersion);
 
         return Ok();
     }
@@ -80,6 +89,8 @@ public class VersioningController : Controller
                 statusCode: 418);
 
         versionProviderService.Advance();
+
+        _logger.LogInformation("Advanced major version to 1.{major}.", versionProviderService.CurrentMajor);
 
         return Ok();
     }

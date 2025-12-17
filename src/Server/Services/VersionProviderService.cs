@@ -20,6 +20,8 @@ public class VersionProviderService
         }
     }
 
+    public ulong CurrentMajor => _data.Stable.Major;
+
     public string GetCurrentVersion(ReleaseChannel rc) =>
         rc switch
         {
@@ -36,9 +38,9 @@ public class VersionProviderService
             _ => throw new ArgumentOutOfRangeException()
         };
 
-    public void IncrementBuild(ReleaseChannel rc)
+    public VersionProvider.Entry IncrementBuild(ReleaseChannel rc)
     {
-        _ = rc switch
+        var entry = rc switch
         {
             ReleaseChannel.Stable => _data.Stable = _data.Stable.CopyIncrement(),
             ReleaseChannel.Canary => _data.Canary = _data.Canary.CopyIncrement(),
@@ -46,6 +48,8 @@ public class VersionProviderService
         };
 
         _data.Save();
+
+        return entry;
     }
 
     public void Advance()
