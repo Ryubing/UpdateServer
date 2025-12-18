@@ -8,11 +8,12 @@ public partial class UpdateClient
     ///     Query the next version for a release channel.
     /// </summary>
     /// <param name="rc">The target release channel.</param>
+    /// <param name="isMajorRelease">If the next version should be a major release, incrementing the second number instead of third. Mainly used in CI.</param>
     /// <returns>Plain version string if request success; null if non-200 series HTTP status code or if not configured to support this endpoint.</returns>
-    public async Task<string?> GetNextVersionAsync(ReleaseChannel rc)
+    public async Task<string?> GetNextVersionAsync(ReleaseChannel rc, bool isMajorRelease = false)
     {
         var httpRequest = new HttpRequestMessage(HttpMethod.Get,
-            $"{Constants.FullRouteName_Api_Versioning}/{Constants.RouteName_Api_Versioning_GetNextVersion}?rc={rc.QueryStringValue}");
+            $"{Constants.FullRouteName_Api_Versioning}/{Constants.RouteName_Api_Versioning_GetNextVersion}?rc={rc.QueryStringValue}&major={isMajorRelease.ToString().ToLower()}");
 
         var resp = await _http.SendAsync(httpRequest);
 

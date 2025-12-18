@@ -44,6 +44,7 @@ public class VersionProvider
         public long Build { get; set; }
 
         public Entry CopyIncrement() => this with { Build = Build + 1 };
+        public Entry CopyIncrementMajor() => this with { Major = Major + 1 };
 
         public override string ToString() =>
             Format

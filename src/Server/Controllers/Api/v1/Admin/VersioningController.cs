@@ -17,7 +17,9 @@ public class VersioningController : Controller
     }
 
     [HttpGet(Constants.RouteName_Api_Versioning_GetNextVersion)]
-    public async Task<ActionResult<string>> GetNext([FromQuery] string rc)
+    public async Task<ActionResult<string>> GetNext(
+        [FromQuery] string rc,
+        [FromQuery] bool major = false)
     {
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return Problem(
@@ -31,11 +33,12 @@ public class VersioningController : Controller
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
                 statusCode: 418);
 
-        return Ok(versionProviderService.GetNextVersion(releaseChannel));
+        return Ok(versionProviderService.GetNextVersion(releaseChannel, major));
     }
 
     [HttpGet(Constants.RouteName_Api_Versioning_GetCurrentVersion)]
-    public async Task<ActionResult<string>> GetCurrent([FromQuery] string rc)
+    public async Task<ActionResult<string>> GetCurrent(
+        [FromQuery] string rc)
     {
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return Problem(

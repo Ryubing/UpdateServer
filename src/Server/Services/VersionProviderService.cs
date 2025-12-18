@@ -30,11 +30,15 @@ public class VersionProviderService
             _ => throw new ArgumentOutOfRangeException()
         };
 
-    public string GetNextVersion(ReleaseChannel rc) =>
+    public string GetNextVersion(ReleaseChannel rc, bool isMajorRelease = false) =>
         rc switch
         {
-            ReleaseChannel.Stable => _data.Stable.CopyIncrement().ToString(),
-            ReleaseChannel.Canary => _data.Canary.CopyIncrement().ToString(),
+            ReleaseChannel.Stable => (
+                isMajorRelease
+                    ? _data.Stable.CopyIncrementMajor()
+                    : _data.Stable.CopyIncrement()
+            ).ToString(),
+            ReleaseChannel.Canary => _data.Canary.CopyIncrement().ToString(), // canaries cannot move the major release, so ignore that boolean for this branch.
             _ => throw new ArgumentOutOfRangeException()
         };
 

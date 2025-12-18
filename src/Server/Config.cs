@@ -65,9 +65,9 @@ internal static class Config
                     {
                         Stable = new()
                         {
-                            Format = "1.{MAJOR}.0",
+                            Format = "1.{MAJOR}.{BUILD}",
                             Major = 3,
-                            Build = -1
+                            Build = 0
                         },
                         Canary = new()
                         {
