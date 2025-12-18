@@ -34,6 +34,24 @@ public class VersioningController : Controller
         return Ok(versionProviderService.GetNextVersion(releaseChannel));
     }
 
+    [HttpGet(Constants.RouteName_Api_Versioning_GetCurrentVersion)]
+    public async Task<ActionResult<string>> GetCurrent([FromQuery] string rc)
+    {
+        if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
+            return Problem(
+                $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'",
+                statusCode: 404);
+
+        var versionProviderService = HttpContext.RequestServices
+            .GetService<VersionProviderService>();
+
+        if (versionProviderService is null)
+            return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
+                statusCode: 418);
+
+        return Ok(versionProviderService.GetCurrentVersion(releaseChannel));
+    }
+
     [HttpPatch(Constants.RouteName_Api_Versioning_IncrementVersion)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status418ImATeapot)]

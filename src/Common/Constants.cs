@@ -20,6 +20,7 @@ internal static class Constants
     public const string RouteName_Api_Version = "version";
     public const string RouteName_Api_Versioning = "versioning";
     public const string RouteName_Api_Versioning_GetNextVersion = "next";
+    public const string RouteName_Api_Versioning_GetCurrentVersion = "current";
     public const string RouteName_Api_Versioning_AdvanceVersion = "advance";
     public const string RouteName_Api_Versioning_IncrementVersion = "increment";
     public const string RouteName_Api_Meta = "meta";
