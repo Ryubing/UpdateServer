@@ -38,7 +38,7 @@ jobs:
         
       - name: Run GLI
         run: |
-          gh release download -R GreemDev/GLI -O gli.exe -p 'gli-win_x64.exe'
+          gh release download -R GreemDev/GLI -O gli.exe -p 'gli-win-x64.exe'
 
           ./gli.exe create-tag -T ${{ secrets.GITLAB_TOKEN }} -P ryubing/update-server -n ${{ steps.version_info.outputs.build_version }} -r ${{ steps.version_info.outputs.git_short_hash }} -c "${{ steps.version_info.outputs.commit_message }}"
         env:
