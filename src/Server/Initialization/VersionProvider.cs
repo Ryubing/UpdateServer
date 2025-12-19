@@ -43,8 +43,8 @@ public class VersionProvider
         public ulong Major { get; set; }
         public long Build { get; set; }
 
-        public Entry CopyIncrement() => this with { Build = Build + 1 };
-        public Entry CopyIncrementMajor() => this with { Major = Major + 1 };
+        public Entry NextBuild() => this with { Build = Build + 1 };
+        public Entry NextMajor() => this with { Major = Major + 1, Build = 0 };
 
         public override string ToString() =>
             Format
