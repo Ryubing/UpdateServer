@@ -21,10 +21,11 @@ public class VersionProvider
 
     public void IncrementAndReset()
     {
-        Stable.Major++;
-        Stable.Build = -1;
-        Canary.Major = Stable.Major;
-        Canary.Build = 0;
+        Stable = Stable.NextMajor();
+        Canary = Canary.NextMajor();
+        if (Stable.Major != Canary.Major) 
+            Canary.Major = Stable.Major;
+        
         Save();
     }
 
