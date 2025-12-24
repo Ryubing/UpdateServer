@@ -15,7 +15,7 @@ public class IndexController : ControllerBase
     [HttpGet("docs"), HttpGet("info"), HttpGet("help")]
     public ActionResult Help()
     {
-        return CommandLineState.UseSwagger 
+        return CommandLineState.Swagger
             ? Redirect("/swagger") 
             : Index();
     }

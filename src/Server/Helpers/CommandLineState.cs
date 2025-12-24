@@ -1,48 +1,61 @@
-﻿namespace Ryujinx.Systems.Update.Server.Helpers;
+﻿using CommandLine;
 
-public static class CommandLineState
+namespace Ryujinx.Systems.Update.Server.Helpers;
+
+public class CommandLineState
 {
-#if DEBUG
-    public static bool UseHttpLogging { get; private set; } = true;
-    public static bool UseSwagger { get; private set; } = true;
-#else
-    public static bool UseHttpLogging { get; private set; } = false;
-    public static bool UseSwagger { get; private set; } = false;
-#endif
-    public static int? ListenPort { get; private set; }
+    public static bool HttpLogging => Instance.UseHttpLogging;
+    public static bool Swagger => Instance.UseSwagger;
+    public static int? Port => Instance.ListenPort;
+    public static bool GenerateVersionPinning => Instance.GenerateVersionPinningConfiguration;
+    public static bool GenerateVersionProvider => Instance.GenerateVersionProviderConfiguration;
 
-    public static void Init(string[] args)
+    public static bool Init(string[] args)
     {
-        foreach (var (index, arg) in args.Index())
-        {
-            switch (arg.ToLower())
-            {
-                case "--port":
-                case "-p":
-                {
-                    if (index + 1 >= args.Length)
-                        throw new Exception("port argument expects a value");
+        ParserResult<CommandLineState> parserResult = Parser.Default.ParseArguments<CommandLineState>(args);
 
-                    if (!args[index + 1].TryParse<int>(out var port))
-                        throw new Exception("port argument must be an integer");
+        if (parserResult is not Parsed<CommandLineState> parsedCls)
+            return false;
 
-                    ListenPort = port;
+        Instance = parsedCls.Value;
 
-                    break;
-                }
-                case "--http-logging":
-                case "-l":
-                {
-                    UseHttpLogging = true;
-                    break;
-                }
-                case "--enable-swagger":
-                case "-s":
-                {
-                    UseSwagger = true;
-                    break;
-                }
-            }
-        }
+        return true;
     }
+
+    private static CommandLineState Instance { get; set; } = null!;
+
+    [Option('h',"http-logging", Required = false, Default = 
+#if DEBUG
+            true
+#else
+            false
+#endif
+        , HelpText = "Register ASP.NET HTTP logging."
+        )]
+    public bool UseHttpLogging { get; set; }
+
+    [Option('s',"swagger-ui", Required = false, Default = 
+#if DEBUG
+            true
+#else
+            false
+#endif
+        , HelpText = "Enable Swagger UI at the <ServerUrl>/swagger endpoint. /docs, /info, and /help redirect there as well with this enabled."
+    )]
+    public bool UseSwagger { get; set; } =
+#if DEBUG
+        true
+#else
+        false
+#endif
+        ;
+
+    [Option('p', "port", Required = false, Default = null, HelpText = "Specifies the port to listen on.")]
+    public int? ListenPort { get; set; }
+
+    [Option("gen-version-pinning", Required = false, Default = false, HelpText = "Generates a template configuration for the version pinning system.")]
+    public bool GenerateVersionPinningConfiguration { get; set; }
+
+    [Option("gen-version-provider", Required = false, Default = false, HelpText = "Generates a template configuration for the version provider system.")]
+    public bool GenerateVersionProviderConfiguration { get; set; }
 }

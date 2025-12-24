@@ -8,7 +8,7 @@ public static class Swagger
 {
     public static void TrySetup(WebApplicationBuilder builder)
     {
-        if (CommandLineState.UseSwagger)
+        if (CommandLineState.Swagger)
         {
             builder.Services.AddOpenApi(Constants.CurrentApiVersion);
             builder.Services.AddOpenApiDocument(opt =>
@@ -28,7 +28,7 @@ public static class Swagger
 
     public static void TryMapUi(WebApplication app)
     {
-        if (CommandLineState.UseSwagger)
+        if (CommandLineState.Swagger)
         {
             app.MapOpenApi();
             app.UseSwaggerUi(opt =>

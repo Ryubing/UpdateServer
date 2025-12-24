@@ -4,19 +4,18 @@ using Ryujinx.Systems.Update.Server.Helpers;
 using Ryujinx.Systems.Update.Server.Services;
 using Ryujinx.Systems.Update.Server.Services.GitLab;
 
-CommandLineState.Init(args);
+if (!CommandLineState.Init(args))
+    return;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (Config.UseVersionPinning(args, out var configSource))
-    builder.Configuration.Sources.Add(configSource);
+builder.TryUseVersionPinning();
+builder.TryUseVersionProvider();
 
-builder.TryUseVersionProvider(args);
+if (CommandLineState.Port != null)
+    builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(CommandLineState.Port.Value));
 
-if (CommandLineState.ListenPort != null)
-    builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(CommandLineState.ListenPort.Value));
-
-if (CommandLineState.UseHttpLogging)
+if (CommandLineState.HttpLogging)
     builder.Services.AddHttpLogging();
 
 builder.Services.Configure<ForwardedHeadersOptions>(opts =>
@@ -43,7 +42,7 @@ VersionCache.InitializeVersionCaches(app);
 
 app.MapControllers();
 
-if (CommandLineState.UseHttpLogging)
+if (CommandLineState.HttpLogging)
     app.UseHttpLogging();
 
 TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
