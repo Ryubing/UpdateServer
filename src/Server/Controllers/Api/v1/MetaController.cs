@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
 using Ryujinx.Systems.Update.Server.Services.GitLab;
 
@@ -8,36 +9,33 @@ namespace Ryujinx.Systems.Update.Server.Controllers;
 [ApiController]
 public class MetaController : ControllerBase
 {
-    private static readonly Dictionary<string, VersionCacheSource> CacheSources =
-        new(2)
-        {
-            { "stable", VersionCacheSource.Empty },
-            { "canary", VersionCacheSource.Empty }
-        };
-    
+    private static readonly CacheSourceMapping CacheSources = new()
+    {
+        Stable = VersionCacheSource.Empty,
+        Canary = null
+    };
+
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
     [EndpointDescription("Query the UpdateServer's internal version caches to determine what GitLab projects back each release channel.")]
-    public ActionResult<Dictionary<string, VersionCacheSource>> Action()
+    public ActionResult<CacheSourceMapping> Action(
+        [FromKeyedServices("stableCache")] VersionCache stableCache,
+        [FromKeyedServices("canaryCache")] VersionCache canaryCache)
     {
-        var stableCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>("stableCache");
-
         if (!stableCache.HasProjectInfo)
             return BadRequest("Stable cache isn't initialized yet.");
-        
-        CacheSources["stable"] = new VersionCacheSource
+
+        CacheSources.Stable = new VersionCacheSource
         {
             Id = stableCache.ProjectId,
             Owner = stableCache.ProjectPath.Split('/')[0],
             Project = stableCache.ProjectPath.Split('/')[1]
         };
-        
-        var canaryCache = HttpContext.RequestServices.GetKeyedService<VersionCache>("canaryCache");
 
-        if (canaryCache?.HasProjectInfo ?? false)
+        if (canaryCache.HasProjectInfo)
         {
-            CacheSources["canary"] = new VersionCacheSource
+            CacheSources.Canary = new VersionCacheSource
             {
                 Id = canaryCache.ProjectId,
                 Owner = canaryCache.ProjectPath.Split('/')[0],
