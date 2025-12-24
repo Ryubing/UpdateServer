@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Gommon;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
 
@@ -23,7 +22,7 @@ public class RefreshCacheController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [SuppressMessage("ReSharper.DPA", "DPA0011: High execution time of MVC action")]
-    public async Task<ActionResult> Action([FromQuery] string rc)
+    public async Task<ActionResult> Action([FromQuery] string rc, [FromHeader(Name = "Authorization")] string adminAccessToken)
     {
         if (!AdminEndpointMetadata.Enabled)
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",

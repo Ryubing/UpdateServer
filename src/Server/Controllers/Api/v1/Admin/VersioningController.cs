@@ -17,9 +17,7 @@ public class VersioningController : Controller
     }
 
     [HttpGet(Constants.RouteName_Api_Versioning_GetNextVersion)]
-    public async Task<ActionResult<string>> GetNext(
-        [FromQuery] string rc,
-        [FromQuery] bool major = false)
+    public ActionResult<string> GetNext([FromQuery] string rc, [FromQuery] bool major = false)
     {
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return Problem(
@@ -37,8 +35,7 @@ public class VersioningController : Controller
     }
 
     [HttpGet(Constants.RouteName_Api_Versioning_GetCurrentVersion)]
-    public async Task<ActionResult<string>> GetCurrent(
-        [FromQuery] string rc)
+    public ActionResult<string> GetCurrent([FromQuery] string rc)
     {
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
             return Problem(
@@ -60,7 +57,7 @@ public class VersioningController : Controller
     [ProducesResponseType(StatusCodes.Status418ImATeapot)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
-    public async Task<ActionResult> Increment([FromQuery] string rc)
+    public ActionResult Increment([FromQuery] string rc, [FromHeader(Name = "Authorization")] string adminAccessToken)
     {
         if (!AdminEndpointMetadata.Enabled)
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
@@ -92,7 +89,7 @@ public class VersioningController : Controller
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status418ImATeapot)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
-    public async Task<ActionResult> Advance()
+    public ActionResult Advance([FromHeader(Name = "Authorization")] string adminAccessToken)
     {
         if (!AdminEndpointMetadata.Enabled)
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
