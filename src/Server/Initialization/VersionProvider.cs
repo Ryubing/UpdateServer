@@ -16,6 +16,8 @@ internal partial class JSCtx : JsonSerializerContext
 
 public class VersionProvider
 {
+    public static readonly FilePath Path = new("config/versionProvider.json", isDirectory: false);
+
     public Entry Stable { get; set; } = new();
     public Entry Canary { get; set; } = new();
 
@@ -30,12 +32,10 @@ public class VersionProvider
     }
 
     public void Save() 
-        => File.WriteAllText("config/versionProvider.json", 
-            JsonSerializer.Serialize(this, JSCtx.ReadableDefault.VersionProvider)
-        );
+        => Path.WriteAllText(JsonSerializer.Serialize(this, JSCtx.ReadableDefault.VersionProvider));
 
     public static VersionProvider? Read() =>
-        JsonSerializer.Deserialize(File.ReadAllText("config/versionProvider.json"),
+        JsonSerializer.Deserialize(Path.ReadAllText(),
             JSCtx.ReadableDefault.VersionProvider);
 
     public record Entry

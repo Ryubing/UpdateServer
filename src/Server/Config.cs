@@ -59,8 +59,8 @@ internal static class Config
     {
         if (args.Any(x => x.EqualsIgnoreCase("--gen-version-provider")))
         {
-            if (!File.Exists("config/versionProvider.json"))
-                File.WriteAllText("config/versionProvider.json", 
+            if (!VersionProvider.Path.ExistsAsFile)
+                VersionProvider.Path.WriteAllText( 
                     JsonSerializer.Serialize(new VersionProvider
                     {
                         Stable = new()
@@ -78,7 +78,7 @@ internal static class Config
                     }, JSCtx.ReadableDefault.VersionProvider));
         }
 
-        if (File.Exists("config/versionProvider.json"))
+        if (VersionProvider.Path.ExistsAsFile)
             builder.Services.AddSingleton<VersionProviderService>();
     }
 }
