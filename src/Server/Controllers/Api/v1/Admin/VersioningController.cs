@@ -71,7 +71,7 @@ public class VersioningController : Controller
                 $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'",
                 statusCode: 404);
 
-        if (!AdminEndpointMetadata.AccessToken.EqualsIgnoreCase(HttpContext.Request.Headers.Authorization))
+        if (!AdminEndpointMetadata.AccessToken.Equals(adminAccessToken))
             return Unauthorized();
 
         var versionProviderService = HttpContext.RequestServices
@@ -99,7 +99,7 @@ public class VersioningController : Controller
                 statusCode: 418);
 
 
-        if (!AdminEndpointMetadata.AccessToken.EqualsIgnoreCase(HttpContext.Request.Headers.Authorization))
+        if (!AdminEndpointMetadata.AccessToken.Equals(adminAccessToken))
             return Unauthorized();
 
         var versionProviderService = HttpContext.RequestServices

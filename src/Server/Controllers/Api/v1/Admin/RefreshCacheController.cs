@@ -33,7 +33,7 @@ public class RefreshCacheController : ControllerBase
             return Problem(
                 $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'", statusCode: 404);
 
-        if (!AdminEndpointMetadata.AccessToken.EqualsIgnoreCase(HttpContext.Request.Headers.Authorization))
+        if (!AdminEndpointMetadata.AccessToken.Equals(adminAccessToken))
             return Unauthorized();
 
         var minutesSinceLastRefresh = (DateTimeOffset.Now - LastRefreshes[releaseChannel]).TotalMinutes;
