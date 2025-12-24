@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Gommon;
 
 namespace Ryujinx.Systems.Update.Server.Helpers.Http;
 
@@ -70,7 +71,7 @@ public partial class PaginatedEndpoint<T>
             return default;
         }
 
-        var returned = (await _parsePage(response.Content)).ToArray();
+        var returned = await _parsePage(response.Content).Then(x => x.ToArray());
         if (returned.Length > 0)
             return returned[0];
         
@@ -87,7 +88,7 @@ public partial class PaginatedEndpoint<T>
                     return default;
                 }
 
-                returned = (await _parsePage(response.Content)).ToArray();
+                returned = await _parsePage(response.Content).Then(x => x.ToArray());
                 if (returned.Length > 0)
                     return returned[0];
 

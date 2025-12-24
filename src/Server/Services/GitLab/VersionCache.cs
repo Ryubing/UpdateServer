@@ -134,7 +134,8 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     {
         _logger.LogInformation("Reloading version cache for {project}", ProjectName);
 
-        _latestTag = (await _gl.GetLatestReleaseAsync(ProjectId))?.TagName;
+        _latestTag = await _gl.GetLatestReleaseAsync(ProjectId)
+            .Then(r => r?.TagName);
 
         if (_latestTag is null)
         {
