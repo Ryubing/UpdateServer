@@ -12,6 +12,7 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
+    [EndpointDescription("Query the latest Stable Ryubing release build matching the provided query parameters.")]
     public async Task<ActionResult<VersionResponse>> GetLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache,
         [FromQuery] string? os = null,
@@ -39,6 +40,7 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
+    [EndpointDescription("Query the latest Canary Ryubing release build matching the provided query parameters.")]
     public async Task<ActionResult<VersionResponse>> GetLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache,
         [FromQuery] string? os = null,
@@ -66,6 +68,7 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
+    [EndpointDescription("Query a specific Stable Ryubing version cache entry.")]
     public async Task<ActionResult<VersionCacheEntry>> GetSpecificStable(
         [FromKeyedServices("stableCache")] VersionCache vcache,
         string version
@@ -81,6 +84,7 @@ public class VersionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
+    [EndpointDescription("Query a specific Canary Ryubing version cache entry.")]
     public async Task<ActionResult<VersionCacheEntry>> GetSpecificCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache,
         string version

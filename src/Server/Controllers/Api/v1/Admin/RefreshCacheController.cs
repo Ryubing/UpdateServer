@@ -21,6 +21,9 @@ public class RefreshCacheController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [EndpointDescription("Causes the internal version cache for the given release channel to refresh." +
+                         "Requires Admin Token authentication via 'Authorization' header." +
+                         "Ratelimit of one request per channel per minute.")]
     [SuppressMessage("ReSharper.DPA", "DPA0011: High execution time of MVC action")]
     public async Task<ActionResult> Action([FromQuery] string rc, [FromHeader(Name = "Authorization")] string adminAccessToken)
     {

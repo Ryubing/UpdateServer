@@ -16,6 +16,7 @@ public class VersioningController : Controller
     }
 
     [HttpGet(Constants.RouteName_Api_Versioning_GetNextVersion)]
+    [EndpointDescription("Query the next Ryubing version from the version provider.")]
     public ActionResult<string> GetNext([FromQuery] string rc, [FromQuery] bool major = false)
     {
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
@@ -34,6 +35,7 @@ public class VersioningController : Controller
     }
 
     [HttpGet(Constants.RouteName_Api_Versioning_GetCurrentVersion)]
+    [EndpointDescription("Query the current Ryubing version from the version provider.")]
     public ActionResult<string> GetCurrent([FromQuery] string rc)
     {
         if (!rc.TryParseAsReleaseChannel(out var releaseChannel))
@@ -56,6 +58,8 @@ public class VersioningController : Controller
     [ProducesResponseType(StatusCodes.Status418ImATeapot)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [EndpointDescription("Increment the current Ryubing version in the version provider for the given release channel." +
+                         "Requires Admin Token authentication via 'Authorization' header.")]
     public ActionResult Increment([FromQuery] string rc, [FromHeader(Name = "Authorization")] string adminAccessToken)
     {
         if (!AdminEndpointMetadata.Enabled)
@@ -88,6 +92,8 @@ public class VersioningController : Controller
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status418ImATeapot)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [EndpointDescription("Increases the major version number for the Ryubing version provider for both release channels." +
+                         "Requires Admin Token authentication via 'Authorization' header.")]
     public ActionResult Advance([FromHeader(Name = "Authorization")] string adminAccessToken)
     {
         if (!AdminEndpointMetadata.Enabled)

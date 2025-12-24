@@ -12,6 +12,7 @@ public class LatestController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [EndpointDescription("Query the latest version of Ryubing.")]
     public async Task<ActionResult<VersionResponse>> GetLatestCustom(
         [FromQuery] string? os,
         [FromQuery] string? arch,
@@ -53,6 +54,7 @@ public class LatestController : ControllerBase
     [HttpGet(Constants.StableRoute), HttpGet]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EndpointDescription("Redirect to the GitLab release URL of the latest Stable Ryubing release.")]
     public async Task<ActionResult> RedirectLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache)
     {
@@ -65,6 +67,7 @@ public class LatestController : ControllerBase
     [HttpGet(Constants.CanaryRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EndpointDescription("Redirect to the GitLab release URL of the latest Canary Ryubing release.")]
     public async Task<ActionResult> RedirectLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache)
     {

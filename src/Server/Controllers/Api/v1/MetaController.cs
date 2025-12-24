@@ -18,7 +18,8 @@ public class MetaController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public async Task<ActionResult<Dictionary<string, VersionCacheSource>>> Action()
+    [EndpointDescription("Query the UpdateServer's internal version caches to determine what GitLab projects back each release channel.")]
+    public ActionResult<Dictionary<string, VersionCacheSource>> Action()
     {
         var stableCache = HttpContext.RequestServices.GetRequiredKeyedService<VersionCache>("stableCache");
 

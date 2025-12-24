@@ -12,6 +12,7 @@ public class DownloadController : ControllerBase
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [EndpointDescription("Download a version of Ryubing.")]
     public async Task<ActionResult> DownloadCustom(
         [FromQuery] string os,
         [FromQuery] string arch,
@@ -54,6 +55,7 @@ public class DownloadController : ControllerBase
     [HttpGet(Constants.StableRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EndpointDescription("Download the latest Stable version of Ryubing.")]
     public async Task<ActionResult> DownloadLatestStable(
         [FromKeyedServices("stableCache")] VersionCache vcache,
         [FromServices] ILogger<DownloadController> logger
@@ -68,6 +70,7 @@ public class DownloadController : ControllerBase
     [HttpGet(Constants.CanaryRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EndpointDescription("Download the latest Canary version of Ryubing.")]
     public async Task<ActionResult> DownloadLatestCanary(
         [FromKeyedServices("canaryCache")] VersionCache vcache,
         [FromServices] ILogger<DownloadController> logger
