@@ -113,6 +113,9 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public VersionCacheEntry? GetLatest(SupportedPlatform platform, SupportedArchitecture arch)
     {
+        if (!HasProjectInfo)
+            return null;
+
         if (PinnedVersions.Find(platform, arch) is { } pinnedVersion && TryGetValue(pinnedVersion, out var pinnedLatest))
             return pinnedLatest;
 
