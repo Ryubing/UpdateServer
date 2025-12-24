@@ -5,6 +5,7 @@ namespace Ryujinx.Systems.Update.Server.Controllers;
 
 [Route("/")]
 [ApiController]
+[ApiExplorerSettings(IgnoreApi = true)]
 public class IndexController : ControllerBase
 {
     [HttpGet]
