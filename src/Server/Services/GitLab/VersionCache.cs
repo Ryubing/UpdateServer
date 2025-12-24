@@ -159,9 +159,9 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             {
                 Tag = release.TagName,
                 ReleaseUrl = ReleaseUrlFormat.Format(release.TagName),
-                Downloads =
+                Downloads = new DownloadLinks 
                 {
-                    Windows =
+                    Windows = new DownloadLinks.SupportedPlatform
                     {
                         X64 = release.Assets.Links
                             .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_x64"))
@@ -170,7 +170,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                             .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_arm64"))
                             ?.Url ?? string.Empty
                     },
-                    Linux =
+                    Linux = new DownloadLinks.SupportedPlatform
                     {
                         X64 = release.Assets.Links
                             .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_x64"))
@@ -179,7 +179,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                             .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_arm64"))
                             ?.Url ?? string.Empty
                     },
-                    LinuxAppImage =
+                    LinuxAppImage = new DownloadLinks.SupportedPlatform
                     {
                         X64 = release.Assets.Links
                             .FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("x64.AppImage"))

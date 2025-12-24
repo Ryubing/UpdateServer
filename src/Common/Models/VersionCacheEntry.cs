@@ -6,7 +6,7 @@ public class VersionCacheEntry
 {
     [JsonPropertyName("tag")] public required string Tag { get; set; }
     [JsonPropertyName("web_url")] public required string ReleaseUrl { get; set; }
-    [JsonPropertyName("downloads")] public DownloadLinks Downloads { get; } = new();
+    [JsonPropertyName("downloads")] public required DownloadLinks Downloads { get; set; }
 
     public string GetUrlFor(SupportedPlatform platform, SupportedArchitecture architecture)
     {
