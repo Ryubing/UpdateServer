@@ -8,8 +8,8 @@ public partial class UpdateClient
     /// <summary>
     ///     Query the sources of the configured version caches on the server. Does not require admin token.
     /// </summary>
-    /// <returns>A <see cref="Dictionary{string,VersionCacheSource}"/>, or null if any non-200 series HTTP status code is returned from the server.</returns>
-    public async Task<Dictionary<string, VersionCacheSource>?> QueryCacheSourcesAsync()
+    /// <returns>A <see cref="CacheSourceMapping"/>, or null if any non-200 series HTTP status code is returned from the server.</returns>
+    public async Task<CacheSourceMapping?> QueryCacheSourcesAsync()
     {
         Log("Checking for cache sources from: {0}", [QualifyUriPath(Constants.FullRouteName_Api_Meta)]);
 
@@ -22,6 +22,6 @@ public partial class UpdateClient
             return null;
         }
 
-        return await resp.Content.ReadFromJsonAsync(JsonSerializerContexts.Default.DictionaryStringVersionCacheSource);
+        return await resp.Content.ReadFromJsonAsync(JsonSerializerContexts.Default.CacheSourceMapping);
     }
 }
