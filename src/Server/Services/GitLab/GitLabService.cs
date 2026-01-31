@@ -42,14 +42,14 @@ public class GitLabService
     public async Task<GitLabReleaseJsonResponse?> GetReleaseAsync(long projectId, string tagName) =>
         await HandleNotFoundAsync(
             await _http.GetAsync($"api/v4/projects/{projectId}/releases/{tagName}"),
-            JsonSerializerContexts.Default.GitLabReleaseJsonResponse
+            ServerJsonSerializerContexts.Default.GitLabReleaseJsonResponse
         );
 
     public PaginatedEndpoint<GitLabReleaseJsonResponse> PageReleases(long projectId)
         => _http.Paginate<GitLabReleaseJsonResponse>(builder => builder
             .WithBaseUrl($"api/v4/projects/{projectId}/releases")
             .WithPerPageCount(100)
-            .WithJsonContentParser(JsonSerializerContexts.Default.IEnumerableGitLabReleaseJsonResponse)
+            .WithJsonContentParser(ServerJsonSerializerContexts.Default.IEnumerableGitLabReleaseJsonResponse)
             .WithQueryStringParameters(
                 QueryParams.Sort("desc"),
                 QueryParams.OrderBy("created_at")

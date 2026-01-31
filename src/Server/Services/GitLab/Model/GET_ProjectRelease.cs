@@ -42,4 +42,4 @@ public class GitLabReleaseJsonResponse
 }
 
 [JsonSerializable(typeof(IEnumerable<GitLabReleaseJsonResponse>))]
-public partial class JsonSerializerContexts : JsonSerializerContext;
+public partial class ServerJsonSerializerContexts : JsonSerializerContext;
