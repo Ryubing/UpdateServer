@@ -250,5 +250,14 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             canaryCache.Init(canarySource, 
                 new PinnedVersions(pvLogger, vpSection.GetSection("Canary")));
         }
+        
+        var custom1Source = versionCacheSection.GetValue<string>("Custom1");
+
+        if (custom1Source != null)
+        {
+            var canaryCache = app.Services.GetRequiredKeyedService<VersionCache>("custom1Cache");
+            canaryCache.Init(custom1Source, 
+                new PinnedVersions(pvLogger, vpSection.GetSection("Custom1")));
+        }
     }
 }
