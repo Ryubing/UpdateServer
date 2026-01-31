@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Gommon;
+using Ryujinx.Systems.Update.Common;
 
 namespace Ryujinx.Systems.Update.Server;
 
@@ -20,14 +21,27 @@ public class VersionProvider
 
     public Entry Stable { get; set; } = new();
     public Entry Canary { get; set; } = new();
+    public Entry Custom1 { get; set; } = new();
 
-    public void IncrementAndReset()
+    public void IncrementAndReset(ReleaseChannel rc = ReleaseChannel.Stable)
     {
-        Stable = Stable.NextMajor();
-        Canary = Canary.NextMajor();
-        if (Stable.Major != Canary.Major) 
-            Canary.Major = Stable.Major;
-        
+        switch (rc)
+        {
+            case ReleaseChannel.Stable or ReleaseChannel.Canary:
+            {
+                Stable = Stable.NextMajor();
+                Canary = Canary.NextMajor();
+                if (Stable.Major != Canary.Major) 
+                    Canary.Major = Stable.Major;
+                break;
+            }
+            case ReleaseChannel.Custom1:
+                Custom1 = Custom1.NextMajor();
+                break;
+            default:
+                return;
+        }
+
         Save();
     }
 

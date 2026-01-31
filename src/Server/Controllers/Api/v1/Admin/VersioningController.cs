@@ -94,12 +94,28 @@ public class VersioningController : Controller
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [EndpointDescription("Increases the major version number for the Ryubing version provider for both release channels." +
                          "Requires Admin Token authentication via 'Authorization' header.")]
-    public ActionResult Advance([FromHeader(Name = "Authorization")] string adminAccessToken)
+    public ActionResult Advance([FromHeader(Name = "Authorization")] string adminAccessToken, 
+        [FromQuery] string? rc = null)
     {
         if (!AdminEndpointMetadata.Enabled)
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
                 statusCode: 418);
 
+        ReleaseChannel? releaseChannel = null;
+
+        if (rc != null)
+        {
+            if (rc.TryParseAsReleaseChannel(out var rcOut))
+            {
+                releaseChannel = rcOut;
+            }
+            else
+            {
+                return Problem(
+                    $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'",
+                    statusCode: 404);
+            }
+        }
 
         if (!AdminEndpointMetadata.AccessToken.Equals(adminAccessToken))
             return Unauthorized();
@@ -111,7 +127,7 @@ public class VersioningController : Controller
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
                 statusCode: 418);
 
-        versionProviderService.Advance();
+        versionProviderService.Advance(releaseChannel ?? ReleaseChannel.Stable);
 
         _logger.LogInformation("Advanced major version to 1.{major}.", versionProviderService.CurrentMajor);
 
