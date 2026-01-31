@@ -80,9 +80,10 @@ public partial class UpdateClient
     /// <summary>
     ///     Requests the configured update server to increment the major version by one for both stable and canary, and to reset the build number to 0.
     /// </summary>
+    /// <param name="rc">The target release channel.</param>
     /// <returns>true if request success; false if non-200 series HTTP status code, null if not configured to support this endpoint.</returns>
     /// <remarks>Requires an authorization-bearing client configuration.</remarks>
-    public async Task<bool?> AdvanceVersionAsync()
+    public async Task<bool?> AdvanceVersionAsync(ReleaseChannel? rc = null)
     {
         if (!_config.CanUseAdminEndpoints)
         {
@@ -90,8 +91,11 @@ public partial class UpdateClient
             return null;
         }
 
-        var httpRequest = new HttpRequestMessage(HttpMethod.Patch,
-            $"{Constants.FullRouteName_Api_Versioning}/{Constants.RouteName_Api_Versioning_AdvanceVersion}");
+        var route = $"{Constants.FullRouteName_Api_Versioning}/{Constants.RouteName_Api_Versioning_AdvanceVersion}";
+        if (rc != null)
+            route += $"?rc={rc.Value.QueryStringValue}";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Patch, route);
         ApplyAuthorization(httpRequest);
 
         if (await _http.SendAsync(httpRequest) is { IsSuccessStatusCode: false } resp)
