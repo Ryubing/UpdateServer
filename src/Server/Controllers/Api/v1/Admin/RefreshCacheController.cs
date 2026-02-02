@@ -12,7 +12,8 @@ public class RefreshCacheController : ControllerBase
         new()
         {
             { ReleaseChannel.Stable, DateTimeOffset.MinValue },
-            { ReleaseChannel.Canary, DateTimeOffset.MinValue }
+            { ReleaseChannel.Canary, DateTimeOffset.MinValue },
+            { ReleaseChannel.Custom1, DateTimeOffset.MinValue }
         };
 
     [HttpPatch]
