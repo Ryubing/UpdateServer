@@ -28,6 +28,7 @@ builder.Services.AddSingleton<GitLabService>();
 builder.Services.AddKeyedSingleton<VersionCache>("stableCache");
 builder.Services.AddKeyedSingleton<VersionCache>("canaryCache");
 builder.Services.AddKeyedSingleton<VersionCache>("custom1Cache");
+builder.Services.AddKeyedSingleton<VersionCache>("kenjinxCache");
 
 Swagger.TrySetup(builder);
 

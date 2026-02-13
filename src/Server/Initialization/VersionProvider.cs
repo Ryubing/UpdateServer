@@ -22,6 +22,7 @@ public class VersionProvider
     public Entry Stable { get; set; } = new();
     public Entry Canary { get; set; } = new();
     public Entry Custom1 { get; set; } = new();
+    public Entry KenjiNX { get; set; } = new();
 
     public void IncrementAndReset(ReleaseChannel rc = ReleaseChannel.Stable)
     {
@@ -37,6 +38,9 @@ public class VersionProvider
             }
             case ReleaseChannel.Custom1:
                 Custom1 = Custom1.NextMajor();
+                break;
+            case ReleaseChannel.KenjiNX:
+                KenjiNX = KenjiNX.NextMajor();
                 break;
             default:
                 return;

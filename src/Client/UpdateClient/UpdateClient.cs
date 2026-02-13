@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedType.Global
@@ -12,7 +13,7 @@ public partial class UpdateClient : IDisposable
 {
     private readonly UpdateClientConfig _config;
     private readonly HttpClient _http;
-    
+
     /// <summary>
     ///     Create a new <see cref="UpdateClient"/> with a given configuration
     /// </summary>
@@ -36,10 +37,10 @@ public partial class UpdateClient : IDisposable
     }
 
     private string QualifyUriPath(string path) => $"{_config.ServerEndpoint.TrimEnd('/')}/{path}";
-    
-    private void Log(string format, IEnumerable<object>? args = null, [CallerMemberName] string caller = null!) 
+
+    private void Log(string format, IEnumerable<object>? args = null, [CallerMemberName] string caller = null!)
         => _config.Logger(format, args?.ToArray() ?? [], caller);
-    
+
     private void ApplyAuthorization(HttpRequestMessage httpRequest)
     {
         httpRequest.Headers.Add("Authorization", _config.AdminAccessToken);

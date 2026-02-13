@@ -100,7 +100,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
             ProjectName, _refreshTimer.Period.TotalMinutes);
-        
+
         while (await _refreshTimer.WaitForNextTickAsync())
         {
             await RefreshAsync();
@@ -116,7 +116,8 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         if (!HasProjectInfo)
             return null;
 
-        if (PinnedVersions.Find(platform, arch) is { } pinnedVersion && TryGetValue(pinnedVersion, out var pinnedLatest))
+        if (PinnedVersions.Find(platform, arch) is { } pinnedVersion &&
+            TryGetValue(pinnedVersion, out var pinnedLatest))
             return pinnedLatest;
 
         return Latest;
@@ -160,7 +161,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             {
                 Tag = release.TagName,
                 ReleaseUrl = ReleaseUrlFormat.Format(release.TagName),
-                Downloads = new DownloadLinks 
+                Downloads = new DownloadLinks
                 {
                     Windows = new DownloadLinks.SupportedPlatform
                     {
@@ -239,7 +240,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         var pvLogger = app.Services.Get<ILoggerFactory>().CreateLogger<PinnedVersions>();
 
         var stableCache = app.Services.GetRequiredKeyedService<VersionCache>("stableCache");
-        stableCache.Init(stableSource, 
+        stableCache.Init(stableSource,
             new PinnedVersions(pvLogger, vpSection.GetSection("Stable")));
 
         var canarySource = versionCacheSection.GetValue<string>("Canary");
@@ -247,17 +248,26 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         if (canarySource != null)
         {
             var canaryCache = app.Services.GetRequiredKeyedService<VersionCache>("canaryCache");
-            canaryCache.Init(canarySource, 
+            canaryCache.Init(canarySource,
                 new PinnedVersions(pvLogger, vpSection.GetSection("Canary")));
         }
-        
+
         var custom1Source = versionCacheSection.GetValue<string>("Custom1");
 
         if (custom1Source != null)
         {
             var canaryCache = app.Services.GetRequiredKeyedService<VersionCache>("custom1Cache");
-            canaryCache.Init(custom1Source, 
+            canaryCache.Init(custom1Source,
                 new PinnedVersions(pvLogger, vpSection.GetSection("Custom1")));
+        }
+
+        var kenjiNxSource = versionCacheSection.GetValue<string>("KenjiNX");
+
+        if (kenjiNxSource != null)
+        {
+            var kenjiCache = app.Services.GetRequiredKeyedService<VersionCache>("kenjinxCache");
+            kenjiCache.Init(custom1Source,
+                new PinnedVersions(pvLogger, vpSection.GetSection("KenjiNX")));
         }
     }
 }

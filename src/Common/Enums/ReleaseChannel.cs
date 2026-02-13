@@ -4,7 +4,8 @@ public enum ReleaseChannel
 {
     Stable,
     Canary,
-    Custom1
+    Custom1,
+    KenjiNX
 }
 
 public static partial class EnumExtensions
@@ -22,6 +23,7 @@ public static partial class EnumExtensions
             "stable" => ReleaseChannel.Stable,
             "canary" => ReleaseChannel.Canary,
             "custom1" => ReleaseChannel.Custom1,
+            "kenjinx" or "kenji" => ReleaseChannel.KenjiNX,
             _ => null
         };
 
