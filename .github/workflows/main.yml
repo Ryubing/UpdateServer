@@ -24,14 +24,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         name: "Checkout code"
 
       - name: Get version info
         id: version_info
         run: |
-          echo "build_version=${{ env.BASE_VERSION }}.$((${{ github.run_number }} - 77))" >> $GITHUB_OUTPUT
-          echo "prev_build_version=${{ env.BASE_VERSION }}.$(($((${{ github.run_number }} - 77)) - 1))" >> $GITHUB_OUTPUT
+          echo "build_version=${{ env.BASE_VERSION }}.$((${{ github.run_number }} - 79))" >> $GITHUB_OUTPUT
+          echo "prev_build_version=${{ env.BASE_VERSION }}.$(($((${{ github.run_number }} - 79)) - 1))" >> $GITHUB_OUTPUT
           echo "git_short_hash=$(git rev-parse --short "${{ github.sha }}")" >> $GITHUB_OUTPUT
           echo "commit_message=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
         shell: bash
@@ -45,7 +45,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         name: "Install .NET SDK"
         with:
           global-json-file: global.json
