@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Update.Server.Services.GitLab;
+using Ryujinx.Systems.Update.Server.Services.Forgejo;
 
 namespace Ryujinx.Systems.Update.Server.Controllers;
 
@@ -54,9 +54,9 @@ public class LatestController : ControllerBase
     [HttpGet(Constants.StableRoute), HttpGet]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [EndpointDescription("Redirect to the GitLab release URL of the latest Stable Ryubing release.")]
+    [EndpointDescription("Redirect to the Forgejo release URL of the latest Stable Ryubing release.")]
     public async Task<ActionResult> RedirectLatestStable(
-        [FromKeyedServices("stableCache")] VersionCache vcache)
+        [FromKeyedServices("stableCache")] ForgejoVersionCache vcache)
     {
         if (await vcache.GetReleaseAsync(c => c.Latest) is { } latest)
             return Redirect(latest.ReleaseUrl);
@@ -67,9 +67,9 @@ public class LatestController : ControllerBase
     [HttpGet(Constants.CanaryRoute)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [EndpointDescription("Redirect to the GitLab release URL of the latest Canary Ryubing release.")]
+    [EndpointDescription("Redirect to the Forgejo release URL of the latest Canary Ryubing release.")]
     public async Task<ActionResult> RedirectLatestCanary(
-        [FromKeyedServices("canaryCache")] VersionCache vcache)
+        [FromKeyedServices("canaryCache")] ForgejoVersionCache vcache)
     {
         if (await vcache.GetReleaseAsync(c => c.Latest) is { } latest)
             return Redirect(latest.ReleaseUrl);

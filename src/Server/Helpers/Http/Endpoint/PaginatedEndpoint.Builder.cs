@@ -7,9 +7,9 @@ namespace Ryujinx.Systems.Update.Server.Helpers.Http;
 public partial class PaginatedEndpoint<T>
 {
     public static BuilderApi Builder(IHttpClientProxy httpClient) => new(httpClient);
-    
+
     public static BuilderApi Builder(HttpClient httpClient) => new(new DefaultHttpClientProxy(httpClient));
-    
+
     public class BuilderApi
     {
         public BuilderApi(IHttpClientProxy httpClient)
@@ -18,19 +18,16 @@ public partial class PaginatedEndpoint<T>
         }
 
         private readonly IHttpClientProxy _http;
-        
+
         public string BaseUrl { get; private set; } = null!;
         public HttpContentParser ContentParser { get; private set; } = null!;
-        public int PerPage { get; private set; } = 100;
-
-        public SafeDictionary<string, object> QueryStringParameters { get; private set; } = new();
 
         public BuilderApi WithBaseUrl(string url)
         {
             BaseUrl = url;
             return this;
         }
-        
+
         public BuilderApi WithContentParser(HttpContentParser contentParser)
         {
             ContentParser = contentParser;
@@ -39,20 +36,8 @@ public partial class PaginatedEndpoint<T>
 
         public BuilderApi WithJsonContentParser(JsonTypeInfo<IEnumerable<T>> typeInfo)
             => WithContentParser(content => content.ReadFromJsonAsync(typeInfo)!);
-        
-        public BuilderApi WithPerPageCount(int perPage)
-        {
-            PerPage = perPage;
-            return this;
-        }
 
-        public BuilderApi WithQueryStringParameters(params (string, object)[] parameters)
-        {
-            QueryStringParameters = Collections.NewSafeDictionary(parameters);
-            return this;
-        }
-
-        public PaginatedEndpoint<T> Build() => new(_http, BaseUrl, ContentParser, QueryStringParameters, PerPage);
+        public PaginatedEndpoint<T> Build() => new(_http, BaseUrl, ContentParser);
 
         public static implicit operator PaginatedEndpoint<T>(BuilderApi builder) => builder.Build();
     }

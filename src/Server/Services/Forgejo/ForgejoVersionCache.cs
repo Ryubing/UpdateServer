@@ -1,45 +1,48 @@
 ﻿using System.Diagnostics;
+using ForgejoApiClient;
+using ForgejoApiClient.Api;
 using Gommon;
-using NGitLab;
-using NGitLab.Models;
 using Ryujinx.Systems.Update.Common;
 
-namespace Ryujinx.Systems.Update.Server.Services.GitLab;
+namespace Ryujinx.Systems.Update.Server.Services.Forgejo;
 
-public class VersionCache : SafeDictionary<string, VersionCacheEntry>
+public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IVersionCache
 {
-    private readonly GitLabService _gl;
-    private readonly ILogger<VersionCache> _logger;
+    private readonly ForgejoService _fj;
+    private readonly ILogger<ForgejoVersionCache> _logger;
     private readonly PeriodicTimer? _refreshTimer;
 
-    private Project? _cachedProject;
+    private Repository? _cachedProject;
 
     public bool HasProjectInfo => _cachedProject != null;
 
-    public string ProjectName => _cachedProject!.NameWithNamespace;
-    public long ProjectId => _cachedProject!.Id;
-    public string ProjectPath => _cachedProject!.PathWithNamespace;
+    public string ProjectName => _cachedProject!.full_name!;
+    public long ProjectId => _cachedProject!.id!.Value;
+    public string ProjectPath => _cachedProject!.full_name!;
 
     private string? _latestTag;
 
-    private PinnedVersions PinnedVersions { get; set; } = null!; //late-init, see Init method
+    private PinnedVersions _pinnedVersions = null!;
+
+    PinnedVersions IVersionCache.PinnedVersions => _pinnedVersions; //late-init, see Init method
 
     // ReSharper disable once ReplaceWithFieldKeyword
 
     // ReleaseUrlFormat is a computed property; using the field keyword instead of this field
     // works and compiles, but it looks really wrong and I hate it.
-    private readonly string _gitlabEndpoint;
+    private readonly string _forgejoEndpoint;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public VersionCache(IConfiguration config, GitLabService gitlabService, ILogger<VersionCache> logger)
+    public ForgejoVersionCache(IConfiguration config, ForgejoService forgejoService,
+        ILogger<ForgejoVersionCache> logger)
     {
-        _gl = gitlabService;
+        _fj = forgejoService;
         _logger = logger;
 
-        _gitlabEndpoint = config["GitLab:Endpoint"]!;
+        _forgejoEndpoint = config["Forgejo:Endpoint"]!;
 
-        if (config["GitLab:RefreshIntervalMinutes"] is not { } refreshIntervalStr)
+        if (config["Forgejo:RefreshIntervalMinutes"] is not { } refreshIntervalStr)
         {
             _refreshTimer = new(TimeSpan.FromMinutes(5));
             return;
@@ -50,7 +53,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
             if (minutes < 0)
             {
                 logger.LogInformation(
-                    "Config value 'GitLab:RefreshIntervalSeconds' is a negative value. Disabling auto cache refreshes.");
+                    "Config value 'Forgejo:RefreshIntervalSeconds' is a negative value. Disabling auto cache refreshes.");
                 _refreshTimer = null;
             }
             else
@@ -59,30 +62,30 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         else
         {
             logger.LogWarning(
-                "Config value 'GitLab:RefreshIntervalSeconds' was not a valid integer. Defaulting to 5 minutes.");
+                "Config value 'Forgejo:RefreshIntervalSeconds' was not a valid integer. Defaulting to 5 minutes.");
             _refreshTimer = new(TimeSpan.FromMinutes(5));
         }
     }
 
-    public string ReleaseUrlFormat => $"{_gitlabEndpoint.TrimEnd('/')}/{ProjectPath}/-/releases/{{0}}";
+    public string ReleaseUrlFormat => $"{_forgejoEndpoint.TrimEnd('/')}/{ProjectPath}/releases/tag/{{0}}";
 
-    public void Init(ProjectId projectId, PinnedVersions pinnedVersions) => Executor.ExecuteBackgroundAsync(async () =>
+    public void Init(string projectId, PinnedVersions pinnedVersions) => Executor.ExecuteBackgroundAsync(async () =>
     {
         try
         {
-            _cachedProject ??= await _gl.Client.Projects.GetAsync(projectId);
+            _cachedProject ??= await _fj.Client.Repository.GetAsync(projectId.Split('/')[0], projectId.Split('/')[1]);
         }
-        catch (GitLabException e)
+        catch (ForgejoClientException e)
         {
             _logger.LogError(
                 "Encountered error when getting the project ({project}) for the version cache. Aborting. Error: {errorMessage}",
-                projectId.ValueAsString(), e.ErrorMessage);
+                projectId, e.Message);
             return;
         }
 
         _logger.LogInformation("Initializing version cache for {project}", ProjectName);
 
-        PinnedVersions = pinnedVersions;
+        _pinnedVersions = pinnedVersions;
 
         await RefreshAsync();
 
@@ -116,14 +119,14 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
         if (!HasProjectInfo)
             return null;
 
-        if (PinnedVersions.Find(platform, arch) is { } pinnedVersion &&
+        if (_pinnedVersions.Find(platform, arch) is { } pinnedVersion &&
             TryGetValue(pinnedVersion, out var pinnedLatest))
             return pinnedLatest;
 
         return Latest;
     }
 
-    public async Task<VersionCacheEntry?> GetReleaseAsync(Func<VersionCache, VersionCacheEntry?> getter)
+    public async Task<VersionCacheEntry?> GetReleaseAsync(Func<ForgejoVersionCache, VersionCacheEntry?> getter)
     {
         using (await TakeLockAsync())
         {
@@ -135,8 +138,18 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
     {
         _logger.LogInformation("Reloading version cache for {project}", ProjectName);
 
-        _latestTag = await _gl.GetLatestReleaseAsync(ProjectId)
-            .Then(r => r?.TagName);
+        try
+        {
+            _latestTag = await _fj.Client.Repository.GetReleaseLatestAsync(
+                ProjectPath.Split('/')[0], ProjectPath.Split('/')[1]
+            ).Then(r => r.tag_name);
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning("Errored trying to get latest release for {project}; aborting. Message: {message}",
+                ProjectName, e.Message);
+            return;
+        }
 
         if (_latestTag is null)
         {
@@ -146,15 +159,10 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         var sw = Stopwatch.StartNew();
 
-        var releases = await _gl.PageReleases(ProjectId)
-            .GetAllAsync(onNonSuccess:
-                code => _logger.LogError(
-                    "One of the pagination requests to get all releases returned a non-success status code: {code}",
-                    Enum.GetName(code) ?? $"{(int)code}")
-            );
-
-        if (releases is null)
-            return;
+        var releases = await _fj.ListReleasesForRepositoryAsync(
+            ProjectPath.Split('/')[0],
+            ProjectPath.Split('/')[1]
+        );
 
         var tempCacheEntries = releases.Select(release =>
             new VersionCacheEntry
@@ -165,36 +173,36 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
                 {
                     Windows = new DownloadLinks.SupportedPlatform
                     {
-                        X64 = release.Assets.Links
-                            .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_x64"))
-                            ?.Url ?? string.Empty,
-                        Arm64 = release.Assets.Links
-                            .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("win_arm64"))
-                            ?.Url ?? string.Empty
+                        X64 = release.Assets?
+                            .FirstOrDefault(x => x.Name.ContainsIgnoreCase("win_x64"))
+                            ?.DownloadUrl ?? string.Empty,
+                        Arm64 = release.Assets?
+                            .FirstOrDefault(x => x.Name.ContainsIgnoreCase("win_arm64"))
+                            ?.DownloadUrl ?? string.Empty
                     },
                     Linux = new DownloadLinks.SupportedPlatform
                     {
-                        X64 = release.Assets.Links
-                            .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_x64"))
-                            ?.Url ?? string.Empty,
-                        Arm64 = release.Assets.Links
-                            .FirstOrDefault(x => x.AssetName.ContainsIgnoreCase("linux_arm64"))
-                            ?.Url ?? string.Empty
+                        X64 = release.Assets?
+                            .FirstOrDefault(x => x.Name.ContainsIgnoreCase("linux_x64"))
+                            ?.DownloadUrl ?? string.Empty,
+                        Arm64 = release.Assets?
+                            .FirstOrDefault(x => x.Name.ContainsIgnoreCase("linux_arm64"))
+                            ?.DownloadUrl ?? string.Empty
                     },
                     LinuxAppImage = new DownloadLinks.SupportedPlatform
                     {
-                        X64 = release.Assets.Links
-                            .FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("x64.AppImage"))
-                            ?.Url ?? string.Empty,
-                        Arm64 = release.Assets.Links
-                            .FirstOrDefault(x => x.AssetName.EndsWithIgnoreCase("arm64.AppImage"))
-                            ?.Url ?? string.Empty
+                        X64 = release.Assets?
+                            .FirstOrDefault(x => x.Name.EndsWithIgnoreCase("x64.AppImage"))
+                            ?.DownloadUrl ?? string.Empty,
+                        Arm64 = release.Assets?
+                            .FirstOrDefault(x => x.Name.EndsWithIgnoreCase("arm64.AppImage"))
+                            ?.DownloadUrl ?? string.Empty
                     },
-                    MacOS = release.Assets.Links
+                    MacOS = release.Assets?
                         .FirstOrDefault(x =>
-                            x.AssetName.ContainsIgnoreCase("macos_universal") ||
-                            x.AssetName.ContainsIgnoreCase("macos_arm64"))
-                        ?.Url ?? string.Empty
+                            x.Name.ContainsIgnoreCase("macos_universal") ||
+                            x.Name.ContainsIgnoreCase("macos_arm64"))
+                        ?.DownloadUrl ?? string.Empty
                 }
             }).ToDictionary(x => x.Tag, x => x);
 
@@ -226,20 +234,20 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
     public static void InitializeVersionCaches(WebApplication app)
     {
-        var versionCacheSection = app.Configuration.GetSection("GitLab")
+        var versionCacheSection = app.Configuration.GetSection("Forgejo")
             .GetRequiredSection("VersionCacheSources");
 
         var stableSource = versionCacheSection.GetValue<string>("Stable");
 
         if (stableSource is null)
             throw new Exception(
-                "Cannot start the server without a GitLab repository in GitLab:VersionCacheSources:Stable");
+                "Cannot start the server without a Forgejo repository in Forgejo:VersionCacheSources:Stable");
 
         var vpSection = app.Configuration.GetSection("VersionPinning");
 
         var pvLogger = app.Services.Get<ILoggerFactory>().CreateLogger<PinnedVersions>();
 
-        var stableCache = app.Services.GetRequiredKeyedService<VersionCache>("stableCache");
+        var stableCache = app.Services.GetRequiredKeyedService<ForgejoVersionCache>("stableCache");
         stableCache.Init(stableSource,
             new PinnedVersions(pvLogger, vpSection.GetSection("Stable")));
 
@@ -247,7 +255,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         if (canarySource != null)
         {
-            var canaryCache = app.Services.GetRequiredKeyedService<VersionCache>("canaryCache");
+            var canaryCache = app.Services.GetRequiredKeyedService<ForgejoVersionCache>("canaryCache");
             canaryCache.Init(canarySource,
                 new PinnedVersions(pvLogger, vpSection.GetSection("Canary")));
         }
@@ -256,7 +264,7 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         if (custom1Source != null)
         {
-            var canaryCache = app.Services.GetRequiredKeyedService<VersionCache>("custom1Cache");
+            var canaryCache = app.Services.GetRequiredKeyedService<ForgejoVersionCache>("custom1Cache");
             canaryCache.Init(custom1Source,
                 new PinnedVersions(pvLogger, vpSection.GetSection("Custom1")));
         }
@@ -265,8 +273,8 @@ public class VersionCache : SafeDictionary<string, VersionCacheEntry>
 
         if (kenjiNxSource != null)
         {
-            var kenjiCache = app.Services.GetRequiredKeyedService<VersionCache>("kenjinxCache");
-            kenjiCache.Init(custom1Source,
+            var kenjiCache = app.Services.GetRequiredKeyedService<ForgejoVersionCache>("kenjinxCache");
+            kenjiCache.Init(kenjiNxSource,
                 new PinnedVersions(pvLogger, vpSection.GetSection("KenjiNX")));
         }
     }

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Ryujinx.Systems.Update.Server;
 using Ryujinx.Systems.Update.Server.Helpers;
 using Ryujinx.Systems.Update.Server.Services;
-using Ryujinx.Systems.Update.Server.Services.GitLab;
+using Ryujinx.Systems.Update.Server.Services.Forgejo;
 
 if (!CommandLineState.Init(args))
     return;
@@ -24,11 +24,11 @@ builder.Services.Configure<ForwardedHeadersOptions>(opts =>
 });
 
 builder.Services.AddSingleton<DefaultHttpClientProxy>();
-builder.Services.AddSingleton<GitLabService>();
-builder.Services.AddKeyedSingleton<VersionCache>("stableCache");
-builder.Services.AddKeyedSingleton<VersionCache>("canaryCache");
-builder.Services.AddKeyedSingleton<VersionCache>("custom1Cache");
-builder.Services.AddKeyedSingleton<VersionCache>("kenjinxCache");
+builder.Services.AddSingleton<ForgejoService>();
+builder.Services.AddKeyedSingleton<ForgejoVersionCache>("stableCache");
+builder.Services.AddKeyedSingleton<ForgejoVersionCache>("canaryCache");
+builder.Services.AddKeyedSingleton<ForgejoVersionCache>("custom1Cache");
+builder.Services.AddKeyedSingleton<ForgejoVersionCache>("kenjinxCache");
 
 Swagger.TrySetup(builder);
 
@@ -40,7 +40,7 @@ app.UseForwardedHeaders();
 
 Swagger.TryMapUi(app);
 
-VersionCache.InitializeVersionCaches(app);
+ForgejoVersionCache.InitializeVersionCaches(app);
 
 app.MapControllers();
 

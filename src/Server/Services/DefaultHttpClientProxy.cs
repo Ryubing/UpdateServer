@@ -14,19 +14,19 @@ public class DefaultHttpClientProxy : IHttpClientProxy, IDisposable
     {
         _logger = logger;
 
-        var gitlabSection = config.GetSection("GitLab");
+        var fjSection = config.GetSection("Forgejo");
 
-        if (!gitlabSection.Exists())
+        if (!fjSection.Exists())
             throw new Exception(
-                $"The '{gitlabSection.Key}' section does not exist in your appsettings.json. You need to provide an 'Endpoint', 'AccessToken', and optionally 'RefreshIntervalMinutes' values.");
+                $"The '{fjSection.Key}' section does not exist in your appsettings.json. You need to provide an 'Endpoint', 'AccessToken', and optionally 'RefreshIntervalMinutes' values.");
 
-        var host = gitlabSection.GetValue<string>("Endpoint")!.TrimEnd('/');
-        var accessToken = gitlabSection.GetValue<string>("AccessToken");
+        var host = fjSection.GetValue<string>("Endpoint")!.TrimEnd('/');
+        var accessToken = fjSection.GetValue<string>("AccessToken");
 
         _http = new HttpClient
         {
             BaseAddress = new Uri(host),
-            DefaultRequestHeaders = { Authorization = AuthenticationHeaderValue.Parse($"Bearer {accessToken}") }
+            DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("token", accessToken) }
         };
     }
 

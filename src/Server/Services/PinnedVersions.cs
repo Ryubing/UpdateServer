@@ -1,7 +1,7 @@
 ﻿using Gommon;
 using Ryujinx.Systems.Update.Common;
 
-namespace Ryujinx.Systems.Update.Server.Services.GitLab;
+namespace Ryujinx.Systems.Update.Server.Services;
 
 public class PinnedVersions : SafeDictionary<SupportedPlatform, SafeDictionary<SupportedArchitecture, string>>
 {

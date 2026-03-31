@@ -5,9 +5,9 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <Company>Ryubing</Company>
-        <Description>A server written in C# using ASP.NET for Ryubing updates, to reduce API spam on the self-hosted GitLab instance.</Description>
+        <Description>A server written in C# using ASP.NET for Ryubing updates, to reduce API spam on the self-hosted Forgejo instance.</Description>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
         <PublishSingleFile>true</PublishSingleFile>
@@ -15,12 +15,12 @@
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
-        <PackageReference Include="Gommon" Version="2.8.0.1" />
+        <PackageReference Include="ForgejoApiClient" Version="14.0.0-rev.2" />
+        <PackageReference Include="Gommon" Version="2.8.1.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
-        <PackageReference Include="NGitLab" Version="11.0.1" />
         <PackageReference Include="NSwag.AspNetCore" Version="14.6.2" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" Condition="'$(Configuration)'=='Debug'" />
-        
+
         <ProjectReference Include="../Common/Ryujinx.Systems.Update.Common.csproj" />
     </ItemGroup>
 

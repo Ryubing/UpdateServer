@@ -18,27 +18,27 @@ on:
 
 
 env:
-  BASE_VERSION: "1.0"
+  BASE_VERSION: "2.0"
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         name: "Checkout code"
-        
+
       - name: Get version info
         id: version_info
         run: |
-          echo "build_version=${{ env.BASE_VERSION }}.${{ github.run_number }}" >> $GITHUB_OUTPUT
-          echo "prev_build_version=${{ env.BASE_VERSION }}.$((${{ github.run_number }} - 1))" >> $GITHUB_OUTPUT
+          echo "build_version=${{ env.BASE_VERSION }}.$((${{ github.run_number }} - 76))" >> $GITHUB_OUTPUT
+          echo "prev_build_version=${{ env.BASE_VERSION }}.$(($((${{ github.run_number }} - 76)) - 1))" >> $GITHUB_OUTPUT
           echo "git_short_hash=$(git rev-parse --short "${{ github.sha }}")" >> $GITHUB_OUTPUT
           echo "commit_message=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
         shell: bash
-        
+
       - name: Run GLI
         run: |
-          gh release download -R GreemDev/GLI -O gli.exe -p 'gli-win-x64.exe'
+          gh release download -R GreemDev/GLI -O gli.exe -p 'gli-win-x64.exe' 2.0.30
 
           ./gli.exe create-tag -T ${{ secrets.GITLAB_TOKEN }} -P ryubing/update-server -n ${{ steps.version_info.outputs.build_version }} -r ${{ steps.version_info.outputs.git_short_hash }} -c "${{ steps.version_info.outputs.commit_message }}"
         env:
@@ -51,17 +51,17 @@ jobs:
 
       - name: Compile
         run: bash build.sh ${{ steps.version_info.outputs.build_version }} false
-        
+
       - name: Compile & publish client library
         run: |
           cd src/Client
           dotnet build -c Release -o ../../nuget_build/client -p:Version="${{ steps.version_info.outputs.build_version }}" -p:PackageReleaseNotes="https://git.ryujinx.app/ryubing/update-server/-/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }}"
           cd ../../
-          
+
           cd src/Common
           dotnet build -c Release -o ../../nuget_build/common -p:Version="${{ steps.version_info.outputs.build_version }}" -p:PackageReleaseNotes="https://git.ryujinx.app/ryubing/update-server/-/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }}"
           cd ../../
-          
+
           dotnet nuget add source "https://git.ryujinx.app/api/v4/projects/71/packages/nuget/index.json" --name gitlab --username ryuadmin --password ${{ secrets.GITLAB_TOKEN }} --store-password-in-clear-text
           dotnet nuget push "nuget_build/client/Ryujinx.UpdateClient.${{ steps.version_info.outputs.build_version }}.nupkg" --source gitlab
           dotnet nuget push "nuget_build/common/Ryujinx.Systems.Update.Common.${{ steps.version_info.outputs.build_version }}.nupkg" --source gitlab

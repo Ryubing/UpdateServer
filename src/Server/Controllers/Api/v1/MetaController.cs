@@ -1,7 +1,6 @@
-﻿using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Update.Server.Services.GitLab;
+using Ryujinx.Systems.Update.Server.Services.Forgejo;
 
 namespace Ryujinx.Systems.Update.Server.Controllers;
 
@@ -18,10 +17,10 @@ public class MetaController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    [EndpointDescription("Query the UpdateServer's internal version caches to determine what GitLab projects back each release channel.")]
+    [EndpointDescription("Query the UpdateServer's internal version caches to determine what Forgejo  projects back each release channel.")]
     public ActionResult<CacheSourceMapping> Action(
-        [FromKeyedServices("stableCache")] VersionCache stableCache,
-        [FromKeyedServices("canaryCache")] VersionCache canaryCache)
+        [FromKeyedServices("stableCache")] ForgejoVersionCache stableCache,
+        [FromKeyedServices("canaryCache")] ForgejoVersionCache canaryCache)
     {
         if (!stableCache.HasProjectInfo)
             return BadRequest("Stable cache isn't initialized yet.");

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
-using Ryujinx.Systems.Update.Server.Services.GitLab;
+using Ryujinx.Systems.Update.Server.Services.Forgejo;
 
 namespace Ryujinx.Systems.Update.Server.Controllers;
 
@@ -57,7 +57,7 @@ public class DownloadController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [EndpointDescription("Download the latest Stable version of Ryubing.")]
     public async Task<ActionResult> DownloadLatestStable(
-        [FromKeyedServices("stableCache")] VersionCache vcache,
+        [FromKeyedServices("stableCache")] ForgejoVersionCache vcache,
         [FromServices] ILogger<DownloadController> logger
     )
     {
@@ -72,7 +72,7 @@ public class DownloadController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [EndpointDescription("Download the latest Canary version of Ryubing.")]
     public async Task<ActionResult> DownloadLatestCanary(
-        [FromKeyedServices("canaryCache")] VersionCache vcache,
+        [FromKeyedServices("canaryCache")] ForgejoVersionCache vcache,
         [FromServices] ILogger<DownloadController> logger
     )
     {
