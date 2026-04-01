@@ -210,47 +210,9 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
             }
         }
 
-        var tempCacheEntries = releases.Select(release =>
-            new VersionCacheEntry
-            {
-                Tag = release.TagName,
-                ReleaseUrl = ReleaseUrlFormat.Format(release.TagName),
-                Downloads = new DownloadLinks
-                {
-                    Windows = new DownloadLinks.SupportedPlatform
-                    {
-                        X64 = release.Assets?
-                            .FirstOrDefault(x => x.Name.ContainsIgnoreCase("win_x64"))
-                            ?.DownloadUrl ?? string.Empty,
-                        Arm64 = release.Assets?
-                            .FirstOrDefault(x => x.Name.ContainsIgnoreCase("win_arm64"))
-                            ?.DownloadUrl ?? string.Empty
-                    },
-                    Linux = new DownloadLinks.SupportedPlatform
-                    {
-                        X64 = release.Assets?
-                            .FirstOrDefault(x => x.Name.ContainsIgnoreCase("linux_x64"))
-                            ?.DownloadUrl ?? string.Empty,
-                        Arm64 = release.Assets?
-                            .FirstOrDefault(x => x.Name.ContainsIgnoreCase("linux_arm64"))
-                            ?.DownloadUrl ?? string.Empty
-                    },
-                    LinuxAppImage = new DownloadLinks.SupportedPlatform
-                    {
-                        X64 = release.Assets?
-                            .FirstOrDefault(x => x.Name.EndsWithIgnoreCase("x64.AppImage"))
-                            ?.DownloadUrl ?? string.Empty,
-                        Arm64 = release.Assets?
-                            .FirstOrDefault(x => x.Name.EndsWithIgnoreCase("arm64.AppImage"))
-                            ?.DownloadUrl ?? string.Empty
-                    },
-                    MacOS = release.Assets?
-                        .FirstOrDefault(x =>
-                            x.Name.ContainsIgnoreCase("macos_universal") ||
-                            x.Name.ContainsIgnoreCase("macos_arm64"))
-                        ?.DownloadUrl ?? string.Empty
-                }
-            }).ToDictionary(x => x.Tag, x => x);
+        var tempCacheEntries = releases
+            .Select(release => release.AsCacheEntry(ReleaseUrlFormat))
+            .ToDictionary(x => x.Tag, x => x);
 
         await _semaphore.WaitAsync();
 
