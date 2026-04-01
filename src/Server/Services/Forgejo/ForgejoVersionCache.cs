@@ -142,30 +142,6 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     {
         _logger.LogInformation("Reloading version cache for {project}", ProjectName);
 
-        if (!_deriveLatestManually)
-        {
-            _logger.LogInformation("Requesting latest version for {project}.", ProjectPath);
-            try
-            {
-                _latestTag = await _fj.Client.Repository.GetReleaseLatestAsync(
-                    ProjectPath.Split('/')[0], ProjectPath.Split('/')[1]
-                ).Then(r => r.tag_name);
-                _logger.LogInformation("Latest received: {latestTag}.", _latestTag);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("Errored trying to get latest release for {project}; aborting. Message: {message}",
-                    ProjectName, e.Message);
-                return;
-            }
-
-            if (_latestTag is null)
-            {
-                _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
-                return;
-            }
-        }
-
         var sw = Stopwatch.StartNew();
 
         var releases = await _fj.ListReleasesForRepositoryAsync(
@@ -173,11 +149,11 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
             ProjectPath.Split('/')[1]
         );
 
-        if (_deriveLatestManually)
+        try
         {
-            _logger.LogInformation("Deriving latest version for {project}.", ProjectPath);
-            try
+            if (_deriveLatestManually)
             {
+                _logger.LogInformation("Deriving latest version for {project}.", ProjectPath);
                 Dictionary<Version, string> versionMapping = new();
                 foreach (var ver in releases.Select(x => x.TagName).Where(x => x != null))
                 {
@@ -196,18 +172,26 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
                 _latestTag = versionMapping.OrderByDescending(x => x.Key).FirstOrDefault().Value;
                 _logger.LogInformation("Latest found: {latestTag}.", _latestTag);
             }
-            catch (Exception e)
+            else
             {
-                _logger.LogWarning("Errored trying to get latest release for {project}; aborting. Message: {message}",
-                    ProjectName, e.Message);
-                return;
+                _logger.LogInformation("Requesting latest version for {project}.", ProjectPath);
+                _latestTag = await _fj.Client.Repository.GetReleaseLatestAsync(
+                    ProjectPath.Split('/')[0], ProjectPath.Split('/')[1]
+                ).Then(r => r.tag_name);
+                _logger.LogInformation("Latest received: {latestTag}.", _latestTag);
             }
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning("Errored trying to get latest release for {project}; aborting. Message: {message}",
+                ProjectName, e.Message);
+            return;
+        }
 
-            if (_latestTag is null)
-            {
-                _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
-                return;
-            }
+        if (_latestTag is null)
+        {
+            _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
+            return;
         }
 
         var tempCacheEntries = releases
