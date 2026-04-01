@@ -21,10 +21,11 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     public string ProjectPath => _cachedProject!.full_name!;
 
     private string? _latestTag;
+    private bool _deriveLatestManually;
 
-    private PinnedVersions _pinnedVersions = null!;
+    private PinnedVersions _pinnedVersions = null!; //late-init, see Init method
 
-    PinnedVersions IVersionCache.PinnedVersions => _pinnedVersions; //late-init, see Init method
+    PinnedVersions IVersionCache.PinnedVersions => _pinnedVersions;
 
     // ReSharper disable once ReplaceWithFieldKeyword
 
@@ -69,46 +70,49 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
 
     public string ReleaseUrlFormat => $"{_forgejoEndpoint.TrimEnd('/')}/{ProjectPath}/releases/tag/{{0}}";
 
-    public void Init(string projectId, PinnedVersions pinnedVersions) => Executor.ExecuteBackgroundAsync(async () =>
-    {
-        try
+    public void Init(string projectId, bool deriveLatestVersionManually, PinnedVersions pinnedVersions) =>
+        Executor.ExecuteBackgroundAsync(async () =>
         {
-            _cachedProject ??= await _fj.Client.Repository.GetAsync(projectId.Split('/')[0], projectId.Split('/')[1]);
-        }
-        catch (ForgejoClientException e)
-        {
-            _logger.LogError(
-                "Encountered error when getting the project ({project}) for the version cache. Aborting. Error: {errorMessage}",
-                projectId, e.Message);
-            return;
-        }
+            _deriveLatestManually = deriveLatestVersionManually;
+            try
+            {
+                _cachedProject ??=
+                    await _fj.Client.Repository.GetAsync(projectId.Split('/')[0], projectId.Split('/')[1]);
+            }
+            catch (ForgejoClientException e)
+            {
+                _logger.LogError(
+                    "Encountered error when getting the project ({project}) for the version cache. Aborting. Error: {errorMessage}",
+                    projectId, e.Message);
+                return;
+            }
 
-        _logger.LogInformation("Initializing version cache for {project}", ProjectName);
+            _logger.LogInformation("Initializing version cache for {project}", ProjectName);
 
-        _pinnedVersions = pinnedVersions;
+            _pinnedVersions = pinnedVersions;
 
-        await RefreshAsync();
-
-        if (_refreshTimer == null)
-        {
-            string howToRefresh = AdminEndpointMetadata.Enabled
-                ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
-                : "restarting the server. Set an admin access token in appsettings.json to enable an endpoint to do this.";
-
-            _logger.LogInformation(
-                "Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}",
-                ProjectName, howToRefresh);
-            return;
-        }
-
-        _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
-            ProjectName, _refreshTimer.Period.TotalMinutes);
-
-        while (await _refreshTimer.WaitForNextTickAsync())
-        {
             await RefreshAsync();
-        }
-    });
+
+            if (_refreshTimer == null)
+            {
+                string howToRefresh = AdminEndpointMetadata.Enabled
+                    ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
+                    : "restarting the server. Set an admin access token in appsettings.json to enable an endpoint to do this.";
+
+                _logger.LogInformation(
+                    "Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}",
+                    ProjectName, howToRefresh);
+                return;
+            }
+
+            _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
+                ProjectName, _refreshTimer.Period.TotalMinutes);
+
+            while (await _refreshTimer.WaitForNextTickAsync())
+            {
+                await RefreshAsync();
+            }
+        });
 
     public Task<IDisposable> TakeLockAsync() => _semaphore.TakeAsync();
 
@@ -138,23 +142,28 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     {
         _logger.LogInformation("Reloading version cache for {project}", ProjectName);
 
-        try
+        if (!_deriveLatestManually)
         {
-            _latestTag = await _fj.Client.Repository.GetReleaseLatestAsync(
-                ProjectPath.Split('/')[0], ProjectPath.Split('/')[1]
-            ).Then(r => r.tag_name);
-        }
-        catch (Exception e)
-        {
-            _logger.LogWarning("Errored trying to get latest release for {project}; aborting. Message: {message}",
-                ProjectName, e.Message);
-            return;
-        }
+            _logger.LogInformation("Requesting latest version for {project}.", ProjectPath);
+            try
+            {
+                _latestTag = await _fj.Client.Repository.GetReleaseLatestAsync(
+                    ProjectPath.Split('/')[0], ProjectPath.Split('/')[1]
+                ).Then(r => r.tag_name);
+                _logger.LogInformation("Latest received: {latestTag}.", _latestTag);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("Errored trying to get latest release for {project}; aborting. Message: {message}",
+                    ProjectName, e.Message);
+                return;
+            }
 
-        if (_latestTag is null)
-        {
-            _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
-            return;
+            if (_latestTag is null)
+            {
+                _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
+                return;
+            }
         }
 
         var sw = Stopwatch.StartNew();
@@ -163,6 +172,43 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
             ProjectPath.Split('/')[0],
             ProjectPath.Split('/')[1]
         );
+
+        if (_deriveLatestManually)
+        {
+            _logger.LogInformation("Deriving latest version for {project}.", ProjectPath);
+            try
+            {
+                Dictionary<Version, string> versionMapping = new();
+                foreach (var ver in releases.Select(x => x.TagName).Where(x => x != null))
+                {
+                    if (Version.TryParse(ver, out Version? result))
+                    {
+                        versionMapping[result] = ver;
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "'{version}' is not parseable as a .NET version. It will not be included in figuring out what release is latest.",
+                            ver);
+                    }
+                }
+
+                _latestTag = versionMapping.OrderByDescending(x => x.Key).FirstOrDefault().Value;
+                _logger.LogInformation("Latest found: {latestTag}.", _latestTag);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("Errored trying to get latest release for {project}; aborting. Message: {message}",
+                    ProjectName, e.Message);
+                return;
+            }
+
+            if (_latestTag is null)
+            {
+                _logger.LogWarning("Latest version for {project} was a 404, aborting.", ProjectName);
+                return;
+            }
+        }
 
         var tempCacheEntries = releases.Select(release =>
             new VersionCacheEntry
@@ -237,45 +283,53 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         var versionCacheSection = app.Configuration.GetSection("Forgejo")
             .GetRequiredSection("VersionCacheSources");
 
-        var stableSource = versionCacheSection.GetValue<string>("Stable");
+        var stableSource = versionCacheSection.GetSection("Stable");
 
-        if (stableSource is null)
+        if (!stableSource.Exists())
             throw new Exception(
-                "Cannot start the server without a Forgejo repository in Forgejo:VersionCacheSources:Stable");
+                "Cannot start the server without a Forgejo repository in Forgejo:VersionCacheSources:Stable:Project");
 
         var vpSection = app.Configuration.GetSection("VersionPinning");
 
         var pvLogger = app.Services.Get<ILoggerFactory>().CreateLogger<PinnedVersions>();
 
-        var stableCache = app.Services.GetRequiredKeyedService<ForgejoVersionCache>("stableCache");
-        stableCache.Init(stableSource,
-            new PinnedVersions(pvLogger, vpSection.GetSection("Stable")));
+        app.Services.GetRequiredKeyedService<ForgejoVersionCache>("stableCache").Init(
+            stableSource.GetValue<string>("Project")!,
+            stableSource.GetValue<bool>("DeriveLatestVersionManually"),
+            new PinnedVersions(pvLogger, vpSection.GetSection("Stable"))
+        );
 
-        var canarySource = versionCacheSection.GetValue<string>("Canary");
+        var canarySource = versionCacheSection.GetSection("Canary");
 
-        if (canarySource != null)
+        if (canarySource.Exists())
         {
-            var canaryCache = app.Services.GetRequiredKeyedService<ForgejoVersionCache>("canaryCache");
-            canaryCache.Init(canarySource,
-                new PinnedVersions(pvLogger, vpSection.GetSection("Canary")));
+            app.Services.GetRequiredKeyedService<ForgejoVersionCache>("canaryCache").Init(
+                canarySource.GetValue<string>("Project")!,
+                canarySource.GetValue<bool>("DeriveLatestVersionManually"),
+                new PinnedVersions(pvLogger, vpSection.GetSection("Canary"))
+            );
         }
 
-        var custom1Source = versionCacheSection.GetValue<string>("Custom1");
+        var custom1Source = versionCacheSection.GetSection("Custom1");
 
-        if (custom1Source != null)
+        if (custom1Source.Exists())
         {
-            var canaryCache = app.Services.GetRequiredKeyedService<ForgejoVersionCache>("custom1Cache");
-            canaryCache.Init(custom1Source,
-                new PinnedVersions(pvLogger, vpSection.GetSection("Custom1")));
+            app.Services.GetRequiredKeyedService<ForgejoVersionCache>("custom1Cache").Init(
+                custom1Source.GetValue<string>("Project")!,
+                custom1Source.GetValue<bool>("DeriveLatestVersionManually"),
+                new PinnedVersions(pvLogger, vpSection.GetSection("Custom1"))
+            );
         }
 
-        var kenjiNxSource = versionCacheSection.GetValue<string>("KenjiNX");
+        var kenjiNxSource = versionCacheSection.GetSection("KenjiNX");
 
-        if (kenjiNxSource != null)
+        if (kenjiNxSource.Exists())
         {
-            var kenjiCache = app.Services.GetRequiredKeyedService<ForgejoVersionCache>("kenjinxCache");
-            kenjiCache.Init(kenjiNxSource,
-                new PinnedVersions(pvLogger, vpSection.GetSection("KenjiNX")));
+            app.Services.GetRequiredKeyedService<ForgejoVersionCache>("kenjinxCache").Init(
+                kenjiNxSource.GetValue<string>("Project")!,
+                kenjiNxSource.GetValue<bool>("DeriveLatestVersionManually"),
+                new PinnedVersions(pvLogger, vpSection.GetSection("KenjiNX"))
+            );
         }
     }
 }

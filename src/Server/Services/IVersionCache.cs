@@ -16,7 +16,7 @@ public interface IVersionCache
 
     public string ReleaseUrlFormat { get; }
 
-    public void Init(string projectPath, PinnedVersions pinnedVersions);
+    public void Init(string projectPath, bool deriveLatestVersionManually, PinnedVersions pinnedVersions);
 
     public Task<IDisposable> TakeLockAsync();
 
