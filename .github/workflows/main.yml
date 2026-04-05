@@ -36,15 +36,6 @@ jobs:
           echo "commit_message=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Run GLI
-        run: |
-          gh release download -R GreemDev/GLI -O gli -p 'gli-linux-x64' 2.0.30
-          chmod +x gli
-
-          ./gli create-tag -T ${{ secrets.GITLAB_TOKEN }} -P ryubing/update-server -n ${{ steps.version_info.outputs.build_version }} -r ${{ steps.version_info.outputs.git_short_hash }} -c "${{ steps.version_info.outputs.commit_message }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: actions/setup-dotnet@v5
         name: "Install .NET SDK"
         with:
@@ -56,16 +47,15 @@ jobs:
       - name: Compile & publish client library
         run: |
           cd src/Client
-          dotnet build -c Release -o ../../nuget_build/client -p:Version="${{ steps.version_info.outputs.build_version }}" -p:PackageReleaseNotes="https://git.ryujinx.app/ryubing/update-server/-/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }}"
+          dotnet build -c Release -o ../../nuget_build/client -p:Version="${{ steps.version_info.outputs.build_version }}" -p:PackageReleaseNotes="https://github.com/Ryubing/UpdateServer/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }}"
           cd ../../
 
           cd src/Common
-          dotnet build -c Release -o ../../nuget_build/common -p:Version="${{ steps.version_info.outputs.build_version }}" -p:PackageReleaseNotes="https://git.ryujinx.app/ryubing/update-server/-/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }}"
+          dotnet build -c Release -o ../../nuget_build/common -p:Version="${{ steps.version_info.outputs.build_version }}" -p:PackageReleaseNotes="https://github.com/Ryubing/UpdateServer/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }}"
           cd ../../
 
-          dotnet nuget add source "https://git.ryujinx.app/api/v4/projects/71/packages/nuget/index.json" --name gitlab --username ryuadmin --password ${{ secrets.GITLAB_TOKEN }} --store-password-in-clear-text
-          dotnet nuget push "nuget_build/client/Ryujinx.UpdateClient.${{ steps.version_info.outputs.build_version }}.nupkg" --source gitlab
-          dotnet nuget push "nuget_build/common/Ryujinx.Systems.Update.Common.${{ steps.version_info.outputs.build_version }}.nupkg" --source gitlab
+          dotnet nuget push "nuget_build/client/Ryujinx.UpdateClient.${{ steps.version_info.outputs.build_version }}.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_TOKEN }}
+          dotnet nuget push "nuget_build/common/Ryujinx.Systems.Update.Common.${{ steps.version_info.outputs.build_version }}.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_TOKEN }}
 
       - name: Create release
         uses: ncipollo/release-action@v1
@@ -74,7 +64,7 @@ jobs:
           tag: ${{ steps.version_info.outputs.build_version }}
           draft: 'false'
           artifacts: "artifacts/*"
-          body: "**[Changes since last build](https://git.ryujinx.app/ryubing/update-server/-/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }})**"
+          body: "**[Changes since last build](https://github.com/Ryubing/UpdateServer/compare/${{ steps.version_info.outputs.prev_build_version }}...${{ steps.version_info.outputs.build_version }})**"
           omitBodyDuringUpdate: true
           owner: Ryubing
           repo: UpdateServer

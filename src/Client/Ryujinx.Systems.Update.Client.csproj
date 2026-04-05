@@ -6,6 +6,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>Ryujinx.UpdateClient</PackageId>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/Ryubing/UpdateServer.git</RepositoryUrl>
+        <Description>Provides a type-safe C# API to access an instance of Ryubing's Update Server.</Description>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
     

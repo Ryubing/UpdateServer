@@ -4,6 +4,9 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/Ryubing/UpdateServer.git</RepositoryUrl>
+        <Description>Shared types between Client and Server.</Description>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
