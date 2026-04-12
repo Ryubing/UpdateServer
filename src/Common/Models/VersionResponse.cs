@@ -13,7 +13,7 @@ public class VersionResponse
 
     [JsonPropertyName("web_url")] public string ReleaseUrl => string.Format(ReleaseUrlFormat, Version);
 
-    [JsonIgnore] public string ReleaseUrlFormat { get; set; }
+    [JsonPropertyName("web_url_format")] public required string ReleaseUrlFormat { get; set; }
 }
 
 public class DownloadLinks
