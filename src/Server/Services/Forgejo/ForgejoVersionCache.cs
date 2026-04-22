@@ -95,7 +95,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
 
             if (_refreshTimer == null)
             {
-                string howToRefresh = AdminEndpointMetadata.Enabled
+                string howToRefresh = AdminEndpointMetadata.Enabled && Config.EnabledEndpoints.VersionCacheRefresh
                     ? $"using the {Constants.FullRouteName_Api_Admin_RefreshCache} endpoint or restarting the server."
                     : "restarting the server. Set an admin access token in appsettings.json to enable an endpoint to do this.";
 

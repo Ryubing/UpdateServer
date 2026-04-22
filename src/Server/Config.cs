@@ -9,6 +9,32 @@ namespace Ryujinx.Systems.Update.Server;
 
 internal static class Config
 {
+    internal static void Init(IConfiguration configuration)
+    {
+        EnabledEndpoints.Init(configuration.GetSection("EnabledEndpoints"));
+        MaxConcurrentDownloads = configuration.GetValue<uint>("MaxConcurrentDownloads");
+    }
+    
+    public static uint MaxConcurrentDownloads { get; private set; }
+    
+    public static class EnabledEndpoints
+    {
+        internal static void Init(IConfigurationSection section)
+        {
+            LatestQuery = section.GetValue<bool>("/latest/query");
+            DirectDownload = section.GetValue<bool>("/download/*");
+            VersionCacheMeta = section.GetValue<bool>("/api/v1/meta");
+            VersionCacheRefresh = section.GetValue<bool>("/api/v1/admin/refresh_cache");
+            Versioning = section.GetValue<bool>("/api/v1/versioning/*");
+        }
+
+        public static bool LatestQuery { get; private set; }
+        public static bool DirectDownload { get; private set; }
+        public static bool VersionCacheMeta { get; private set; }
+        public static bool VersionCacheRefresh { get; private set; }
+        public static bool Versioning { get; private set; }
+    }
+    
     private static readonly IFileProvider DiskProvider;
 
     static Config()

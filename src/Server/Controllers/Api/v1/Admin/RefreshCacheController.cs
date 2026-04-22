@@ -29,7 +29,7 @@ public class RefreshCacheController : ControllerBase
     [SuppressMessage("ReSharper.DPA", "DPA0011: High execution time of MVC action")]
     public async Task<ActionResult> Action([FromQuery] string rc, [FromHeader(Name = "Authorization")] string adminAccessToken)
     {
-        if (!AdminEndpointMetadata.Enabled)
+        if (!AdminEndpointMetadata.Enabled || !Config.EnabledEndpoints.VersionCacheRefresh)
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
                 statusCode: 418);
 

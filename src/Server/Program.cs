@@ -36,6 +36,8 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+Config.Init(app.Configuration);
+
 app.UseForwardedHeaders();
 
 Swagger.TryMapUi(app);

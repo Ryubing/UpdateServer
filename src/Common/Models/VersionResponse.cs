@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
@@ -11,7 +10,9 @@ public class VersionResponse
 
     [JsonPropertyName("download_url")] public required string ArtifactUrl { get; set; }
 
-    [JsonPropertyName("web_url")] public string ReleaseUrl => string.Format(ReleaseUrlFormat, Version);
+    [JsonIgnore] public string ReleaseUrl => string.Format(ReleaseUrlFormat, Version);
+
+    [JsonPropertyName("max_concurrency")] public required uint MaxConcurrency { get; set; }
 
     [JsonPropertyName("web_url_format")] public required string ReleaseUrlFormat { get; set; }
 }

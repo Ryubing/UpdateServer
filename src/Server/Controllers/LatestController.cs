@@ -42,11 +42,21 @@ public class LatestController : ControllerBase
 
         if (await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch)) is not { } latest)
             return NotFound();
+        
+        if (!Config.EnabledEndpoints.LatestQuery)
+            return Ok(new VersionResponse
+            {
+                Version = latest.Tag,
+                ArtifactUrl = "",
+                MaxConcurrency = Config.MaxConcurrentDownloads,
+                ReleaseUrlFormat = vcache.ReleaseUrlFormat
+            });
 
         return Ok(new VersionResponse
         {
             Version = latest.Tag,
             ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
+            MaxConcurrency = Config.MaxConcurrentDownloads,
             ReleaseUrlFormat = vcache.ReleaseUrlFormat
         });
     }

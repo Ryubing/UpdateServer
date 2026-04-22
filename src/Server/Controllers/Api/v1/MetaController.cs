@@ -22,6 +22,10 @@ public class MetaController : ControllerBase
         [FromKeyedServices("stableCache")] ForgejoVersionCache stableCache,
         [FromKeyedServices("canaryCache")] ForgejoVersionCache canaryCache)
     {
+        if (!Config.EnabledEndpoints.VersionCacheMeta)
+            return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
+                statusCode: 418);
+        
         if (!stableCache.HasProjectInfo)
             return BadRequest("Stable cache isn't initialized yet.");
 

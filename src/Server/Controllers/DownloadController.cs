@@ -20,6 +20,10 @@ public class DownloadController : ControllerBase
         [FromQuery] string version = Constants.RouteName_Latest
     )
     {
+        if (!Config.EnabledEndpoints.DirectDownload)
+            return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
+                statusCode: 418);
+
         if (os == string.Empty)
             return BadRequest("os was empty.");
 
@@ -61,6 +65,10 @@ public class DownloadController : ControllerBase
         [FromServices] ILogger<DownloadController> logger
     )
     {
+        if (!Config.EnabledEndpoints.DirectDownload)
+            return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
+                statusCode: 418);
+
         if (await vcache.GetReleaseAsync(c => c.Latest) is not { } latest)
             return NotFound();
 
@@ -76,6 +84,10 @@ public class DownloadController : ControllerBase
         [FromServices] ILogger<DownloadController> logger
     )
     {
+        if (!Config.EnabledEndpoints.DirectDownload)
+            return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
+                statusCode: 418);
+
         if (await vcache.GetReleaseAsync(c => c.Latest) is not { } latest)
             return NotFound();
 
