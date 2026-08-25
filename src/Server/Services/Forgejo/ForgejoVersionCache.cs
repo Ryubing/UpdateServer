@@ -60,7 +60,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
                 {
                     logger.LogInformation(
                         "Config value 'Forgejo:DownloadLimitPerInterval' is a negative value. Disabling download limit.");
-                    _downloadLimit = int.MaxValue;
+                    _downloadLimit = 0;
                     _downloadIntervalTimer = null;
                 }
                 else
@@ -188,8 +188,8 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
             return null;
         }
     }
-    
-    public void ResetDownloadLimit()
+
+    private void ResetDownloadLimit()
     {
         _downloadCount = 0;
         
