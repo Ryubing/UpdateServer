@@ -11,6 +11,8 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     private readonly ForgejoService _fj;
     private readonly ILogger<ForgejoVersionCache> _logger;
     private readonly PeriodicTimer? _refreshTimer;
+    private int _downloadLimit; 
+    private int _downloadCount; 
 
     private Repository? _cachedProject;
 
@@ -42,6 +44,31 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         _logger = logger;
 
         _forgejoEndpoint = config["Forgejo:Endpoint"]!;
+        
+        if (config["Forgejo:DownloadLimitPerInterval"] is not { } downloadLimitStr)
+        {
+            _downloadLimit = 5000;
+        }
+        else
+        {
+            if (int.TryParse(downloadLimitStr, out var downloadLimit))
+            {
+                if (downloadLimit < 0)
+                {
+                    logger.LogInformation(
+                        "Config value 'Forgejo:DownloadLimitPerInterval' is a negative value. Disabling download limit.");
+                    _downloadLimit = int.MaxValue;
+                }
+                else
+                    _downloadLimit = downloadLimit;
+            }
+            else
+            {
+                logger.LogWarning(
+                    "Config value 'Forgejo:DownloadLimitPerInterval' was not a valid integer. Defaulting 5000 downloads per interval.");
+                _downloadLimit = 5000;
+            }
+        }
 
         if (config["Forgejo:RefreshIntervalMinutes"] is not { } refreshIntervalStr)
         {
@@ -100,12 +127,12 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
                     : "restarting the server. Set an admin access token in appsettings.json to enable an endpoint to do this.";
 
                 _logger.LogInformation(
-                    "Periodic version cache refreshing is disabled for {project}. It can be refreshed by {means}",
+                    "Periodic version cache and download limit refreshing is disabled for {project}. It can be refreshed by {means}",
                     ProjectName, howToRefresh);
                 return;
             }
 
-            _logger.LogInformation("Refreshing version cache for {project} every {timePeriod} minutes.",
+            _logger.LogInformation("Refreshing version cache and download limit for {project} every {timePeriod} minutes.",
                 ProjectName, _refreshTimer.Period.TotalMinutes);
 
             while (await _refreshTimer.WaitForNextTickAsync())
@@ -134,13 +161,20 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     {
         using (await TakeLockAsync())
         {
+            if (_downloadCount > _downloadLimit)
+            {
+                return null;
+            }
+
+            _downloadCount++;
+            
             return getter(this);
         }
     }
 
     public async Task RefreshAsync()
     {
-        _logger.LogInformation("Reloading version cache for {project}", ProjectName);
+        _logger.LogInformation("Reloading version cache and download limit for {project}", ProjectName);
 
         var sw = Stopwatch.StartNew();
 
@@ -222,6 +256,10 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
 
         _logger.LogInformation("Loaded {entryCount} version cache entries for {project}; took {time}ms.", Count,
             ProjectName, sw.ElapsedMilliseconds);
+
+        _downloadCount = 0;
+        
+        _logger.LogInformation("Download limit reset for {project}. Download limit for interval is: {limit}", ProjectName, _downloadLimit);
     }
 
     public static void InitializeVersionCaches(WebApplication app)
