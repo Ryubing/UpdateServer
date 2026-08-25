@@ -47,7 +47,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         
         if (config["Forgejo:DownloadLimitPerInterval"] is not { } downloadLimitStr)
         {
-            _downloadLimit = 5000;
+            _downloadLimit = 500;
         }
         else
         {
@@ -65,8 +65,8 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
             else
             {
                 logger.LogWarning(
-                    "Config value 'Forgejo:DownloadLimitPerInterval' was not a valid integer. Defaulting 5000 downloads per interval.");
-                _downloadLimit = 5000;
+                    "Config value 'Forgejo:DownloadLimitPerInterval' was not a valid integer. Defaulting 500 downloads per interval.");
+                _downloadLimit = 500;
             }
         }
 
