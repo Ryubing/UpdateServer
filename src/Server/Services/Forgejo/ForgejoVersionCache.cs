@@ -11,7 +11,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     private readonly ForgejoService _fj;
     private readonly ILogger<ForgejoVersionCache> _logger;
     private readonly PeriodicTimer? _refreshTimer;
-    private int _downloadLimit; 
+    private readonly int _downloadLimit; 
     private int _downloadCount; 
 
     private Repository? _cachedProject;
