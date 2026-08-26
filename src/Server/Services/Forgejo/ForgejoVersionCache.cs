@@ -14,7 +14,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     private readonly PeriodicTimer? _refreshTimer;
     private readonly PeriodicTimer? _downloadIntervalTimer;
     private readonly int _downloadLimit; 
-    private int _downloadCount; 
+    private int _downloadAttempts; 
 
     private Repository? _cachedProject;
 
@@ -181,7 +181,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     {
         using (await TakeLockAsync())
         {
-            if (_downloadIntervalTimer is null ||  _downloadCount++ < _downloadLimit)
+            if (_downloadAttempts++ < _downloadLimit || _downloadIntervalTimer is null)
             {
                 return getter(this);
             }
@@ -192,9 +192,11 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
 
     private void ResetDownloadLimit()
     {
-        _downloadCount = 0;
+        int attempts = _downloadAttempts;
         
-        _logger.LogInformation("Download limit reset for {project}. Download limit for interval is: {limit}", ProjectName, _downloadLimit);
+        _downloadAttempts = 0;
+        
+        _logger.LogInformation("Download limit reset for {project}. {attempts} download attempts in the last interval. Download limit for interval is: {limit}", ProjectName, attempts, _downloadLimit);
     }
 
     public async Task RefreshAsync()
