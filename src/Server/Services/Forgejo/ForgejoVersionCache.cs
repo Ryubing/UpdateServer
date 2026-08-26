@@ -200,7 +200,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         
         _downloadAttempts = 0;
         
-        _logger.LogInformation("Download limit reset for {project}. {attempts} download attempts in the last interval. Download limit for interval is: {limit}", ProjectName, attempts, _downloadLimit);
+        _logger.LogInformation("Download attempt count reset for {project}. {attempts} download attempts in the last interval. Download limit for interval is: {limit}", ProjectName, attempts, _downloadLimit);
     }
 
     public async Task RefreshAsync()
