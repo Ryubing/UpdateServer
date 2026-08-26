@@ -51,6 +51,8 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         
         if (config["Forgejo:DownloadLimitPerInterval"] is not { } downloadLimitStr)
         {
+            logger.LogWarning(
+                "Config value 'Forgejo:DownloadLimitPerInterval' is missing. Defaulting 100 downloads per interval.");
             _downloadLimit = 100;
         }
         else
@@ -70,13 +72,15 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
             else
             {
                 logger.LogWarning(
-                    "Config value 'Forgejo:DownloadLimitPerInterval' was not a valid integer. Defaulting 100 downloads per interval.");
+                    "Config value 'Forgejo:DownloadLimitPerInterval' is not a valid integer. Defaulting 100 downloads per interval.");
                 _downloadLimit = 100;
             }
         }
 
         if (config["Forgejo:RefreshIntervalMinutes"] is not { } refreshIntervalStr)
         {
+            logger.LogWarning(
+                "Config value 'Forgejo:RefreshIntervalSeconds' is missing. Defaulting to 5 minutes.");
             _refreshTimer = new(TimeSpan.FromMinutes(5));
             return;
         }
@@ -95,7 +99,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         else
         {
             logger.LogWarning(
-                "Config value 'Forgejo:RefreshIntervalSeconds' was not a valid integer. Defaulting to 5 minutes.");
+                "Config value 'Forgejo:RefreshIntervalSeconds' is not a valid integer. Defaulting to 5 minutes.");
             _refreshTimer = new(TimeSpan.FromMinutes(5));
         }
     }
