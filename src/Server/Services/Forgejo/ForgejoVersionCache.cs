@@ -3,6 +3,7 @@ using ForgejoApiClient;
 using ForgejoApiClient.Api;
 using Gommon;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server.Helpers.Results;
 
 namespace Ryujinx.Systems.Update.Server.Services.Forgejo;
 
@@ -164,10 +165,10 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
 
     public VersionCacheEntry? Latest => this[_latestTag ?? string.Empty];
 
-    public VersionCacheEntry? GetLatest(SupportedPlatform platform, SupportedArchitecture arch)
+    public Return<VersionCacheEntry?> GetLatest(SupportedPlatform platform, SupportedArchitecture arch)
     {
         if (!HasProjectInfo)
-            return null;
+            return Return<VersionCacheEntry?>.Failure(new ReleaseError(ReleaseError.ReleaseErrorType.NotInitialized));
 
         if (_pinnedVersions.Find(platform, arch) is { } pinnedVersion &&
             TryGetValue(pinnedVersion, out var pinnedLatest))
@@ -176,7 +177,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         return Latest;
     }
 
-    public async Task<VersionCacheEntry?> GetReleaseAsync(Func<ForgejoVersionCache, VersionCacheEntry?> getter)
+    public async Task<Return<VersionCacheEntry?>> GetReleaseAsync(Func<ForgejoVersionCache, Return<VersionCacheEntry?>> getter)
     {
         using (await TakeLockAsync())
         {
@@ -185,7 +186,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
                 return getter(this);
             }
 
-            return null;
+            return Return<VersionCacheEntry?>.Failure(new ReleaseError(ReleaseError.ReleaseErrorType.RateLimited));
         }
     }
 

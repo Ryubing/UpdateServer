@@ -1,5 +1,8 @@
+using System.ComponentModel;
+using Gommon;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server.Helpers.Results;
 using Ryujinx.Systems.Update.Server.Services.Forgejo;
 
 namespace Ryujinx.Systems.Update.Server.Controllers;
@@ -43,16 +46,26 @@ public class DownloadController : ControllerBase
             return BadRequest(
                 $"Unknown release channel '{rc}'; valid are '{Constants.StableRoute}' and '{Constants.CanaryRoute}'");
 
-        var release = await HttpContext.RequestServices
+        var result = await HttpContext.RequestServices
             .GetCacheFor(releaseChannel)
             .GetReleaseAsync(c =>
                 version is Constants.RouteName_Latest ? c.GetLatest(supportedPlatform, supportedArch) : c[version]
             );
 
-        if (release is null)
-            return NotFound();
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
+        
+        if (result.IsSuccess && result.Unwrap() is {} release)
+            return Redirect(release.GetUrlFor(supportedPlatform, supportedArch));
 
-        return Redirect(release.GetUrlFor(supportedPlatform, supportedArch));
+        return NotFound();
     }
 
     [HttpGet]
@@ -69,10 +82,22 @@ public class DownloadController : ControllerBase
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
                 statusCode: 418);
 
-        if (await vcache.GetReleaseAsync(c => c.Latest) is not { } latest)
-            return NotFound();
+        Return<VersionCacheEntry?> result = await vcache.GetReleaseAsync(c => c.Latest);
 
-        return RedirectOrProblem(latest, logger, HttpContext.Request.Headers.UserAgent.ToString());
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
+        
+        if (result.IsSuccess && result.Unwrap() is {} latest)
+            return RedirectOrProblem(latest, logger, HttpContext.Request.Headers.UserAgent.ToString());
+        
+        return NotFound();
     }
 
     [HttpGet(Constants.CanaryRoute)]
@@ -88,10 +113,22 @@ public class DownloadController : ControllerBase
             return Problem("This instance of Ryubing UpdateServer is not configured to support this endpoint.",
                 statusCode: 418);
 
-        if (await vcache.GetReleaseAsync(c => c.Latest) is not { } latest)
-            return NotFound();
+        Return<VersionCacheEntry?> result = await vcache.GetReleaseAsync(c => c.Latest);
 
-        return RedirectOrProblem(latest, logger, HttpContext.Request.Headers.UserAgent.ToString());
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
+        
+        if (result.IsSuccess && result.Unwrap() is {} latest)
+            return RedirectOrProblem(latest, logger, HttpContext.Request.Headers.UserAgent.ToString());
+        
+        return NotFound();
     }
 
     private ActionResult RedirectOrProblem(VersionCacheEntry cacheEntry, ILogger<DownloadController> logger,
