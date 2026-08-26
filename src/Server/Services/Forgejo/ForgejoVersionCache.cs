@@ -70,7 +70,7 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
             else
             {
                 logger.LogWarning(
-                    "Config value 'Forgejo:DownloadLimitPerInterval' was not a valid integer. Defaulting 500 downloads per interval.");
+                    "Config value 'Forgejo:DownloadLimitPerInterval' was not a valid integer. Defaulting 100 downloads per interval.");
                 _downloadLimit = 100;
             }
         }
