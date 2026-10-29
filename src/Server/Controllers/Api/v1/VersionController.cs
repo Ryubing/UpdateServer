@@ -1,5 +1,8 @@
+using System.ComponentModel;
+using Gommon;
 using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server.Helpers.Results;
 using Ryujinx.Systems.Update.Server.Services.Forgejo;
 
 namespace Ryujinx.Systems.Update.Server.Controllers;
@@ -25,25 +28,39 @@ public class VersionController : ControllerBase
         if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
             return BadRequest($"Unknown architecture '{arch}'");
 
-        if (await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch)) is not { } latest)
-            return NotFound();
+        Return<VersionCacheEntry?> result = await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch));
+        
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
+        
+        if (result.IsSuccess && result.Unwrap() is { } latest)
+        {
+            if (!Config.EnabledEndpoints.LatestQuery)
+                return Ok(new VersionResponse
+                {
+                    Version = latest.Tag,
+                    ArtifactUrl = "",
+                    MaxConcurrency = Config.MaxConcurrentDownloads,
+                    ReleaseUrlFormat = vcache.ReleaseUrlFormat
+                });
 
-        if (!Config.EnabledEndpoints.LatestQuery)
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = "",
+                ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
                 MaxConcurrency = Config.MaxConcurrentDownloads,
                 ReleaseUrlFormat = vcache.ReleaseUrlFormat
             });
-
-        return Ok(new VersionResponse
-        {
-            Version = latest.Tag,
-            ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
-            MaxConcurrency = Config.MaxConcurrentDownloads,
-            ReleaseUrlFormat = vcache.ReleaseUrlFormat
-        });
+        }
+        
+        return NotFound();
     }
 
     [HttpGet($"{Constants.CanaryRoute}/{Constants.RouteName_Latest}")]
@@ -62,26 +79,40 @@ public class VersionController : ControllerBase
 
         if (!arch.TryParseAsSupportedArchitecture(out var supportedArch))
             return BadRequest($"Unknown architecture '{arch}'");
+        
+        Return<VersionCacheEntry?> result = await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch));
+        
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
 
-        if (await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch)) is not { } latest)
-            return NotFound();
+        if (result.IsSuccess && result.Unwrap() is { } latest)
+        {
+            if (!Config.EnabledEndpoints.LatestQuery)
+                return Ok(new VersionResponse
+                {
+                    Version = latest.Tag,
+                    ArtifactUrl = "",
+                    MaxConcurrency = Config.MaxConcurrentDownloads,
+                    ReleaseUrlFormat = vcache.ReleaseUrlFormat
+                });
 
-        if (!Config.EnabledEndpoints.LatestQuery)
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = "",
+                ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
                 MaxConcurrency = Config.MaxConcurrentDownloads,
                 ReleaseUrlFormat = vcache.ReleaseUrlFormat
             });
-
-        return Ok(new VersionResponse
-        {
-            Version = latest.Tag,
-            ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
-            MaxConcurrency = Config.MaxConcurrentDownloads,
-            ReleaseUrlFormat = vcache.ReleaseUrlFormat
-        });
+        }
+        
+        return NotFound();
     }
 
     [HttpGet($"{Constants.StableRoute}/{{version}}")]
@@ -110,7 +141,19 @@ public class VersionController : ControllerBase
         string version
     )
     {
-        if (await vcache.GetReleaseAsync(c => c[version]) is { } cacheEntry)
+        Return<VersionCacheEntry?> result = await vcache.GetReleaseAsync(c => c[version]);
+        
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
+        
+        if (result.IsSuccess && result.Unwrap() is {} cacheEntry)
             return Ok(cacheEntry);
 
         return NotFound();

@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel;
+using Gommon;
+using Microsoft.AspNetCore.Mvc;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server.Helpers.Results;
 using Ryujinx.Systems.Update.Server.Services.Forgejo;
 
 namespace Ryujinx.Systems.Update.Server.Controllers;
@@ -40,37 +43,64 @@ public class LatestController : ControllerBase
 
         var vcache = HttpContext.RequestServices.GetCacheFor(releaseChannel);
 
-        if (await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch)) is not { } latest)
-            return NotFound();
+        Return<VersionCacheEntry?> result = await vcache.GetReleaseAsync(c => c.GetLatest(supportedPlatform, supportedArch));
         
-        if (!Config.EnabledEndpoints.LatestQuery)
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
+
+        if (result.IsSuccess && result.Unwrap() is { } latest)
+        {
+            if (!Config.EnabledEndpoints.LatestQuery)
+                return Ok(new VersionResponse
+                {
+                    Version = latest.Tag,
+                    ArtifactUrl = "",
+                    MaxConcurrency = Config.MaxConcurrentDownloads,
+                    ReleaseUrlFormat = vcache.ReleaseUrlFormat
+                });
+
             return Ok(new VersionResponse
             {
                 Version = latest.Tag,
-                ArtifactUrl = "",
+                ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
                 MaxConcurrency = Config.MaxConcurrentDownloads,
                 ReleaseUrlFormat = vcache.ReleaseUrlFormat
             });
-
-        return Ok(new VersionResponse
-        {
-            Version = latest.Tag,
-            ArtifactUrl = latest.GetUrlFor(supportedPlatform, supportedArch),
-            MaxConcurrency = Config.MaxConcurrentDownloads,
-            ReleaseUrlFormat = vcache.ReleaseUrlFormat
-        });
+        } 
+        
+        return NotFound();
     }
 
     [HttpGet(Constants.StableRoute), HttpGet]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [EndpointDescription("Redirect to the Forgejo release URL of the latest Stable Ryubing release.")]
     public async Task<ActionResult> RedirectLatestStable(
         [FromKeyedServices("stableCache")] ForgejoVersionCache vcache)
     {
-        if (await vcache.GetReleaseAsync(c => c.Latest) is { } latest)
-            return Redirect(latest.ReleaseUrl);
+        Return<VersionCacheEntry?> result = await vcache.GetReleaseAsync(c => c.Latest);
 
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
+        
+        if (result.IsSuccess && result.Unwrap() is {} latest)
+            return Redirect(latest.ReleaseUrl);
+        
         return NotFound();
     }
 
@@ -81,7 +111,19 @@ public class LatestController : ControllerBase
     public async Task<ActionResult> RedirectLatestCanary(
         [FromKeyedServices("canaryCache")] ForgejoVersionCache vcache)
     {
-        if (await vcache.GetReleaseAsync(c => c.Latest) is { } latest)
+        Return<VersionCacheEntry?> result = await vcache.GetReleaseAsync(c => c.Latest);
+        
+        if (result.IsOf(out ReleaseError error))
+        {
+            return error.Error switch
+            {
+                ReleaseError.ReleaseErrorType.NotInitialized => NotFound(),
+                ReleaseError.ReleaseErrorType.RateLimited => Problem("The version cache has hit the request rate limit.", statusCode: StatusCodes.Status429TooManyRequests),
+                _ => throw new InvalidEnumArgumentException()
+            };
+        }
+        
+        if (result.IsSuccess && result.Unwrap() is {} latest)
             return Redirect(latest.ReleaseUrl);
 
         return NotFound();

@@ -3,6 +3,7 @@ using ForgejoApiClient;
 using ForgejoApiClient.Api;
 using Gommon;
 using Ryujinx.Systems.Update.Common;
+using Ryujinx.Systems.Update.Server.Helpers.Results;
 
 namespace Ryujinx.Systems.Update.Server.Services.Forgejo;
 
@@ -11,6 +12,9 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
     private readonly ForgejoService _fj;
     private readonly ILogger<ForgejoVersionCache> _logger;
     private readonly PeriodicTimer? _refreshTimer;
+    private readonly PeriodicTimer? _downloadIntervalTimer;
+    private readonly int _downloadLimit; 
+    private int _downloadAttempts; 
 
     private Repository? _cachedProject;
 
@@ -42,9 +46,41 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         _logger = logger;
 
         _forgejoEndpoint = config["Forgejo:Endpoint"]!;
+        
+        _downloadIntervalTimer = new(TimeSpan.FromMinutes(1));
+        
+        if (config["Forgejo:DownloadLimitPerInterval"] is not { } downloadLimitStr)
+        {
+            logger.LogWarning(
+                "Config value 'Forgejo:DownloadLimitPerInterval' is missing. Defaulting 100 downloads per interval.");
+            _downloadLimit = 100;
+        }
+        else
+        {
+            if (int.TryParse(downloadLimitStr, out var downloadLimit))
+            {
+                if (downloadLimit < 0)
+                {
+                    logger.LogInformation(
+                        "Config value 'Forgejo:DownloadLimitPerInterval' is a negative value. Disabling download limit.");
+                    _downloadLimit = 0;
+                    _downloadIntervalTimer = null;
+                }
+                else
+                    _downloadLimit = downloadLimit;
+            }
+            else
+            {
+                logger.LogWarning(
+                    "Config value 'Forgejo:DownloadLimitPerInterval' is not a valid integer. Defaulting 100 downloads per interval.");
+                _downloadLimit = 100;
+            }
+        }
 
         if (config["Forgejo:RefreshIntervalMinutes"] is not { } refreshIntervalStr)
         {
+            logger.LogWarning(
+                "Config value 'Forgejo:RefreshIntervalSeconds' is missing. Defaulting to 5 minutes.");
             _refreshTimer = new(TimeSpan.FromMinutes(5));
             return;
         }
@@ -63,14 +99,15 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         else
         {
             logger.LogWarning(
-                "Config value 'Forgejo:RefreshIntervalSeconds' was not a valid integer. Defaulting to 5 minutes.");
+                "Config value 'Forgejo:RefreshIntervalSeconds' is not a valid integer. Defaulting to 5 minutes.");
             _refreshTimer = new(TimeSpan.FromMinutes(5));
         }
     }
 
     public string ReleaseUrlFormat => $"{_forgejoEndpoint.TrimEnd('/')}/{ProjectPath}/releases/tag/{{0}}";
 
-    public void Init(string projectId, bool deriveLatestVersionManually, PinnedVersions pinnedVersions) =>
+    public void Init(string projectId, bool deriveLatestVersionManually, PinnedVersions pinnedVersions)
+    {
         Executor.ExecuteBackgroundAsync(async () =>
         {
             _deriveLatestManually = deriveLatestVersionManually;
@@ -113,15 +150,29 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
                 await RefreshAsync();
             }
         });
+        
+        Executor.ExecuteBackgroundAsync(async () =>
+        {
+            if (_downloadIntervalTimer is null)
+            {
+                return;
+            }
+            
+            while (await _downloadIntervalTimer.WaitForNextTickAsync())
+            {
+                ResetDownloadLimit();
+            }
+        });
+    }
 
     public Task<IDisposable> TakeLockAsync() => _semaphore.TakeAsync();
 
     public VersionCacheEntry? Latest => this[_latestTag ?? string.Empty];
 
-    public VersionCacheEntry? GetLatest(SupportedPlatform platform, SupportedArchitecture arch)
+    public Return<VersionCacheEntry?> GetLatest(SupportedPlatform platform, SupportedArchitecture arch)
     {
         if (!HasProjectInfo)
-            return null;
+            return Return<VersionCacheEntry?>.Failure(new ReleaseError(ReleaseError.ReleaseErrorType.NotInitialized));
 
         if (_pinnedVersions.Find(platform, arch) is { } pinnedVersion &&
             TryGetValue(pinnedVersion, out var pinnedLatest))
@@ -130,12 +181,26 @@ public class ForgejoVersionCache : SafeDictionary<string, VersionCacheEntry>, IV
         return Latest;
     }
 
-    public async Task<VersionCacheEntry?> GetReleaseAsync(Func<ForgejoVersionCache, VersionCacheEntry?> getter)
+    public async Task<Return<VersionCacheEntry?>> GetReleaseAsync(Func<ForgejoVersionCache, Return<VersionCacheEntry?>> getter)
     {
         using (await TakeLockAsync())
         {
-            return getter(this);
+            if (_downloadAttempts++ < _downloadLimit || _downloadIntervalTimer is null)
+            {
+                return getter(this);
+            }
+
+            return Return<VersionCacheEntry?>.Failure(new ReleaseError(ReleaseError.ReleaseErrorType.RateLimited));
         }
+    }
+
+    private void ResetDownloadLimit()
+    {
+        int attempts = _downloadAttempts;
+        
+        _downloadAttempts = 0;
+        
+        _logger.LogInformation("Download attempt count reset for {project}. {attempts} download attempts in the last interval. Download limit for interval is: {limit}", ProjectName, attempts, _downloadLimit);
     }
 
     public async Task RefreshAsync()
