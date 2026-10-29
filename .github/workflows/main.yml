@@ -16,6 +16,8 @@ on:
       - '.gitignore'
       - '.gitattributes'
 
+permissions:
+  contents: write
 
 env:
   BASE_VERSION: "2.0"
