@@ -30,31 +30,31 @@ public class Release
             {
                 Windows = new DownloadLinks.SupportedPlatform
                 {
-                    X64 = GetAttachmentUrl(x => x.Name.ContainsIgnoreCase("win_x64"), ".zip"),
-                    Arm64 = GetAttachmentUrl(x => x.Name.ContainsIgnoreCase("win_arm64"), ".zip")
+                    X64 = GetAttachmentUrl("win_x64", ".zip"),
+                    Arm64 = GetAttachmentUrl("win_arm64", ".zip")
                 },
                 Linux = new DownloadLinks.SupportedPlatform
                 {
-                    X64 = GetAttachmentUrl(x => x.Name.ContainsIgnoreCase("linux_x64"), ".tar.gz"),
-                    Arm64 = GetAttachmentUrl(x => x.Name.ContainsIgnoreCase("linux_arm64"), ".tar.gz")
+                    X64 = GetAttachmentUrl("linux_x64", ".tar.gz"),
+                    Arm64 = GetAttachmentUrl("linux_arm64", ".tar.gz")
                 },
                 LinuxAppImage = new DownloadLinks.SupportedPlatform
                 {
-                    X64 = GetAttachmentUrl(x => x.Name.EndsWithIgnoreCase("x64.AppImage")),
-                    Arm64 = GetAttachmentUrl(x => x.Name.EndsWithIgnoreCase("arm64.AppImage"))
+                    X64 = GetAttachmentUrl("-x64", ".AppImage"),
+                    Arm64 = GetAttachmentUrl("-arm64", ".AppImage")
                 },
-                MacOS = GetAttachmentUrl(x =>
-                    x.Name.ContainsIgnoreCase("macos_universal") ||
-                    x.Name.ContainsIgnoreCase("macos_arm64")
-                )
+                MacOS = GetAttachmentUrl("macos", ".tar.gz")
             }
         };
 
-    public Attachment? GetAttachment(Func<Attachment, bool> predicate, string preferredFileExtension) 
-        => Assets?.Where(predicate).OrderByDescending(x => x.Name.Contains(preferredFileExtension)).FirstOrDefault();
+    public Attachment? GetAttachment(Func<Attachment, bool> platformPredicate, Func<Attachment, bool> fileTypePredicate) 
+        => Assets?.Where(platformPredicate).OrderByDescending(fileTypePredicate).FirstOrDefault();
 
-    public string GetAttachmentUrl(Func<Attachment, bool> predicate, string preferredFileExtension = "") 
-        => GetAttachment(predicate, preferredFileExtension)?.DownloadUrl ?? string.Empty;
+    public string GetAttachmentUrl(string platform, string preferredFileExtension = "") 
+        => GetAttachment(
+            x => x.Name.ContainsIgnoreCase(platform),
+            x => x.Name.EndsWithIgnoreCase(preferredFileExtension)
+            )?.DownloadUrl ?? string.Empty;
 }
 
 public class Attachment
