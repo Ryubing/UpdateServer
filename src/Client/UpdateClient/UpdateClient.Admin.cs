@@ -1,4 +1,6 @@
-﻿using Ryujinx.Systems.Update.Common;
+﻿using System.Net;
+using Gommon;
+using Ryujinx.Systems.Update.Common;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -14,12 +16,12 @@ public partial class UpdateClient
     /// <param name="rc">The target release channel.</param>
     /// <returns>true if request success; false if non-200 series HTTP status code, null if not configured to support this endpoint.</returns>
     /// <remarks>Requires an authorization-bearing client configuration.</remarks>
-    public async Task<bool?> RefreshVersionCacheAsync(ReleaseChannel rc)
+    public async Task<Result> RefreshVersionCacheAsync(ReleaseChannel rc)
     {
         if (!_config.CanUseAdminEndpoints)
         {
             Log("Cannot request cache refresh, as there is no configured admin access token.");
-            return null;
+            return Result.Fail;
         }
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Patch,
@@ -30,9 +32,9 @@ public partial class UpdateClient
         {
             Log("Refreshing version cache failed: received status code {0}; content body: {1}",
                 [Enum.GetName(resp.StatusCode) ?? $"{(int)resp.StatusCode}", await resp.Content.ReadAsStringAsync()]);
-            return false;
+            return Result.Failure(new GenericError<HttpStatusCode>(resp.StatusCode));
         }
 
-        return true;
+        return Result.Success;
     }
 }
