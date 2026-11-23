@@ -15,5 +15,9 @@
     <ItemGroup>
         <ProjectReference Include="../Common/Ryujinx.Systems.Update.Common.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <PackageReference Include="Gommon" Version="2.8.1.1" />
+    </ItemGroup>
 
 </Project>

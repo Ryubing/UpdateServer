@@ -1,5 +1,7 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
 using System.Runtime.InteropServices;
+using Gommon;
 using Ryujinx.Systems.Update.Common;
 
 // ReSharper disable UnusedMember.Global
@@ -16,8 +18,8 @@ public partial class UpdateClient
     /// <param name="platform">The platform to download for.</param>
     /// <param name="arch">The target CPU architecture.</param>
     /// <param name="rc">The desired release channel.</param>
-    /// <returns>A <see cref="VersionResponse"/>, or null if any non-200 series HTTP status code is returned from the server.</returns>
-    public async Task<VersionResponse?> QueryLatestAsync(
+    /// <returns>A <see cref="VersionResponse"/> wrapped in a <see cref="Return{T}"/> result, with a <see cref="GenericError{HttpStatusCode}"/> errorState on failure.</returns>
+    public async Task<Return<VersionResponse?>> QueryLatestAsync(
         SupportedPlatform platform,
         SupportedArchitecture arch,
         ReleaseChannel rc = ReleaseChannel.Stable)
@@ -35,7 +37,7 @@ public partial class UpdateClient
         {
             Log("Received non-success status code ({0}) for update query!",
                 [Enum.GetName(resp.StatusCode) ?? $"{(int)resp.StatusCode}"]);
-            return null;
+            return Return<VersionResponse?>.Failure(new GenericError<HttpStatusCode>(resp.StatusCode));
         }
 
         return await resp.Content.ReadFromJsonAsync(JsonSerializerContexts.Default.VersionResponse);
@@ -45,9 +47,9 @@ public partial class UpdateClient
     ///     Query the latest version of a given release channel matching the current platform.
     /// </summary>
     /// <param name="rc">The desired release channel.</param>
-    /// <returns>A <see cref="VersionResponse"/>, or null if any non-200 series HTTP status code is returned from the server.</returns>
+    /// <returns>A <see cref="VersionResponse"/> wrapped in a <see cref="Return{T}"/> result, with a <see cref="GenericError{HttpStatusCode}"/> errorState on failure.</returns>
     /// <exception cref="PlatformNotSupportedException">Thrown when the current platform is not some combination of Windows, Linux, or macOS on x86-64 or ARM64.</exception>
-    public Task<VersionResponse?> QueryLatestAsync(
+    public Task<Return<VersionResponse?>> QueryLatestAsync(
         ReleaseChannel rc = ReleaseChannel.Stable) =>
         QueryLatestAsync(
             OperatingSystem.IsWindows()
