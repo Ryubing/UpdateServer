@@ -14,7 +14,7 @@ public partial class UpdateClient
     ///     Requests the configured update server to refresh its version cache for a given release channel.
     /// </summary>
     /// <param name="rc">The target release channel.</param>
-    /// <returns>true if request success; false if non-200 series HTTP status code, null if not configured to support this endpoint.</returns>
+    /// <returns>A <see cref="Result"/>, with a <see cref="GenericError{HttpStatusCode}"/> errorState when encountering an http error.</returns>
     /// <remarks>Requires an authorization-bearing client configuration.</remarks>
     public async Task<Result> RefreshVersionCacheAsync(ReleaseChannel rc)
     {
